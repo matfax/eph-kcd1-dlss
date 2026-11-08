@@ -1,0 +1,87 @@
+--- MM_AdvancedGraphics.xml.orig
++++ MM_AdvancedGraphics.xml
+@@ -472,0 +473,54 @@
++    <Node Id="980" Class="UI:Functions:MainMenu:AddChoicesButton" pos="-740,-970,0" flags="0">
++      <Inputs instanceID="-1" buttonId="SW_DLSS" containerIndex="0" uiText="DLSS / Upscaling" tooltip="Off = no DLSS, native resolution. Render scale 0.83 / 0.67 / 0.58 / 0.5 / 0.33 (Ultra Quality .. Ultra Perf). No DLAA." disable="0" sound="" />
++    </Node>
++    <Node Id="981" Class="UI:Functions:MainMenu:AddChoiceOption" pos="-440,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="0" buttonId="SW_DLSS" containerIndex="0" uiText="Off" tooltip="" disable="0" />
++    </Node>
++    <Node Id="982" Class="UI:Functions:MainMenu:AddChoiceOption" pos="-290,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="1" buttonId="SW_DLSS" containerIndex="0" uiText="Ultra Quality" tooltip="" disable="0" />
++    </Node>
++    <Node Id="983" Class="UI:Functions:MainMenu:AddChoiceOption" pos="-140,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="2" buttonId="SW_DLSS" containerIndex="0" uiText="Quality" tooltip="" disable="0" />
++    </Node>
++    <Node Id="984" Class="UI:Functions:MainMenu:AddChoiceOption" pos="160,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="3" buttonId="SW_DLSS" containerIndex="0" uiText="Balanced" tooltip="" disable="0" />
++    </Node>
++    <Node Id="985" Class="UI:Functions:MainMenu:AddChoiceOption" pos="460,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="4" buttonId="SW_DLSS" containerIndex="0" uiText="Performance" tooltip="" disable="0" />
++    </Node>
++    <Node Id="986" Class="UI:Functions:MainMenu:AddChoiceOption" pos="760,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="5" buttonId="SW_DLSS" containerIndex="0" uiText="Ultra Perf" tooltip="" disable="0" />
++    </Node>
++    <Node Id="987" Class="UI:Functions:MainMenu:AddChoiceOption" pos="1060,-970,0" flags="0">
++      <Inputs instanceID="-1" choiceId="6" buttonId="SW_DLSS" containerIndex="0" uiText="Unsupported" tooltip="" disable="0" />
++    </Node>
++    <Node Id="988" Class="Debug:ConsoleVariable" pos="1510,1190,0" flags="0">
++      <Inputs CVar="r_DLSSMode" Value="4" />
++    </Node>
++    <Node Id="989" Class="UI:Functions:MainMenu:SetChoice" pos="1990,1190,0" flags="0">
++      <Inputs instanceID="-1" id="SW_DLSS" containerIndex="0" choiceId="0" />
++    </Node>
++    <Node Id="990" Class="UI:Functions:MainMenu:GetChoice" pos="760,5630,0" flags="0">
++      <Inputs instanceID="-1" id="SW_DLSS" containerIndex="0" />
++    </Node>
++    <Node Id="991" Class="UI:Functions:MainMenu:AddChoicesButton" pos="-740,-900,0" flags="0">
++      <Inputs instanceID="-1" buttonId="SW_DLSSPRESET" containerIndex="0" uiText="DLSS Model" tooltip="Transformer: the DLSS 4 model (sharper, more stable, a little more GPU time). CNN: the classic DLSS 3 model." disable="0" sound="" />
++    </Node>
++    <Node Id="992" Class="UI:Functions:MainMenu:AddChoiceOption" pos="-440,-900,0" flags="0">
++      <Inputs instanceID="-1" choiceId="0" buttonId="SW_DLSSPRESET" containerIndex="0" uiText="Transformer" tooltip="" disable="0" />
++    </Node>
++    <Node Id="993" Class="UI:Functions:MainMenu:AddChoiceOption" pos="-140,-900,0" flags="0">
++      <Inputs instanceID="-1" choiceId="1" buttonId="SW_DLSSPRESET" containerIndex="0" uiText="CNN" tooltip="" disable="0" />
++    </Node>
++    <Node Id="994" Class="UI:Functions:MainMenu:AddChoiceOption" pos="160,-900,0" flags="0">
++      <Inputs instanceID="-1" choiceId="2" buttonId="SW_DLSSPRESET" containerIndex="0" uiText="Unsupported" tooltip="" disable="0" />
++    </Node>
++    <Node Id="995" Class="Debug:ConsoleVariable" pos="1510,1260,0" flags="0">
++      <Inputs CVar="r_DLSSPreset" Value="0" />
++    </Node>
++    <Node Id="996" Class="UI:Functions:MainMenu:SetChoice" pos="1990,1260,0" flags="0">
++      <Inputs instanceID="-1" id="SW_DLSSPRESET" containerIndex="0" choiceId="0" />
++    </Node>
++    <Node Id="997" Class="UI:Functions:MainMenu:GetChoice" pos="760,5700,0" flags="0">
++      <Inputs instanceID="-1" id="SW_DLSSPRESET" containerIndex="0" />
++    </Node>
+@@ -787 +841,13 @@
+-    <Edge nodeIn="557" nodeOut="824" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="980" nodeOut="824" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="981" nodeOut="980" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="982" nodeOut="981" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="983" nodeOut="982" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="984" nodeOut="983" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="985" nodeOut="984" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="986" nodeOut="985" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="987" nodeOut="986" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="991" nodeOut="987" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="992" nodeOut="991" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="993" nodeOut="992" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="994" nodeOut="993" portIn="Call" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="557" nodeOut="994" portIn="Call" portOut="OnCall" enabled="1" />
+@@ -847,0 +914,14 @@
++    <Edge nodeIn="988" nodeOut="146" portIn="Get" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="989" nodeOut="988" portIn="Call" portOut="CurValue" enabled="1" />
++    <Edge nodeIn="989" nodeOut="988" portIn="choiceId" portOut="CurValue" enabled="1" />
++    <Edge nodeIn="988" nodeOut="732" portIn="Set" portOut="onEvent" enabled="1" />
++    <Edge nodeIn="990" nodeOut="785" portIn="Call" portOut="out" enabled="1" />
++    <Edge nodeIn="988" nodeOut="990" portIn="Set" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="988" nodeOut="990" portIn="Value" portOut="ReturnVal" enabled="1" />
++    <Edge nodeIn="995" nodeOut="146" portIn="Get" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="996" nodeOut="995" portIn="Call" portOut="CurValue" enabled="1" />
++    <Edge nodeIn="996" nodeOut="995" portIn="choiceId" portOut="CurValue" enabled="1" />
++    <Edge nodeIn="995" nodeOut="732" portIn="Set" portOut="onEvent" enabled="1" />
++    <Edge nodeIn="997" nodeOut="785" portIn="Call" portOut="out" enabled="1" />
++    <Edge nodeIn="995" nodeOut="997" portIn="Set" portOut="OnCall" enabled="1" />
++    <Edge nodeIn="995" nodeOut="997" portIn="Value" portOut="ReturnVal" enabled="1" />

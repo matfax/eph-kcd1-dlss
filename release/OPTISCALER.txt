@@ -1,0 +1,93 @@
+FSR / XeSS FOR KINGDOM COME: DELIVERANCE THROUGH OPTISCALER
+(companion to DLSS for Kingdom Come: Deliverance @VERSION@)
+
+The mod talks to the upscaler through NVIDIA's NGX interface. OptiScaler
+is a free, open-source layer that answers that interface with AMD FSR
+2.2 / 3.1 / 4, Intel XeSS or DLSS, on any GPU vendor. So with OptiScaler
+in place, AMD and Intel cards (and NVIDIA cards that prefer FSR or XeSS)
+get the same upscaled rendering. OptiScaler is a separate project and is
+NOT included in this archive: download it yourself from
+  https://github.com/optiscaler/OptiScaler/releases
+(the .7z of the latest release; the mod was tested with 0.9.4). Its wiki:
+https://github.com/optiscaler/OptiScaler/wiki
+
+WHICH UPSCALER YOU GET
+The game is DirectX 11. OptiScaler's choices for DX11 are:
+- FSR 2.2.1 and FSR 3.1 running natively on DX11 (any GPU);
+- XeSS 2 natively on DX11 (Intel Arc only);
+- FSR 3.1 "via DX12" (fsr31_12): a background DX12 device does the
+  upscaling, which costs up to about 10% but is the only way to FSR 4
+  (RDNA 4 officially; RDNA 3 works too) and to XeSS on non-Intel cards.
+Change it any time in the game with OptiScaler's overlay: press Insert
+(Alt+Insert on some keyboard layouts). The upscaler, FSR 4 on/off,
+sharpening and the frame counter (Page Up) are all in there.
+
+WINDOWS
+1. Install the mod first (Install-Windows.bat) and start the game once.
+2. Extract the OptiScaler .7z. Copy these files from it into the game's
+   Bin\Win64 folder (the folder with KingdomCome.exe and KCDDLSS.asi):
+     OptiScaler.dll
+     OptiScaler.ini
+     libxess.dll, libxess_dx11.dll, libxell.dll
+     amd_fidelityfx_dx12.dll, amd_fidelityfx_upscaler_dx12.dll,
+     amd_fidelityfx_vk.dll
+     the D3D12_Optiscaler folder (D3D12Core.dll inside)
+   Do NOT rename OptiScaler.dll to dxgi.dll / winmm.dll / nvngx.dll as the
+   OptiScaler wiki suggests for other games: here the mod loads it by
+   name. Leave fakenvapi and the frame-generation files out, the game has
+   no frame generation to replace.
+3. Open Bin\Win64\KCDDLSS.ini in a text editor and change the line
+     NgxDll =
+   to
+     NgxDll = OptiScaler.dll
+4. Start the game. Bin\Win64\KCDDLSS.log now says
+     NGX provider from KCDDLSS.ini NgxDll: ...\Bin\Win64\OptiScaler.dll
+   and a bit later "dlss: CreateFeature ... result 0x1". Press Insert in
+   the menu to open OptiScaler's overlay and pick the upscaler.
+5. Optional, in Bin\Win64\OptiScaler.ini (section [Upscalers]):
+     Dx11Upscaler=fsr31_12   with  Fsr4Update=true  (section [FSR])
+       = FSR 4 on Radeon RX 7000/9000;
+     Dx11Upscaler=fsr31      = FSR 3.1 native DX11 (older Radeon, GeForce);
+     Dx11Upscaler=xess       = XeSS 2 on Intel Arc.
+   The overlay changes the same settings and saves them for you.
+To go back to DLSS set NgxDll = (empty) again; to remove OptiScaler delete
+the files from step 2.
+DLSS itself does not need OptiScaler: on a GeForce leave NgxDll empty.
+Note for GeForce users: with OptiScaler active the plugin's own DLSS
+preset choice (Preset = in KCDDLSS.ini) is handled by OptiScaler instead.
+
+STEAM DECK / LINUX (PROTON)
+Nothing to copy. Recent GE-Proton and Proton-CachyOS builds carry
+OptiScaler and switch it on with an environment variable:
+1. Install the mod (Install-Linux-SteamDeck.sh), start the game once.
+2. Right-click the game in Steam > Properties > General > Launch Options
+   and put PROTON_USE_OPTISCALER=1 in front of the line the installer left
+   there, for example:
+     PROTON_USE_OPTISCALER=1 WINEDLLOVERRIDES="version=n,b" %command%
+   For FSR 4 on Radeon RX 7000/9000 add PROTON_FSR4_UPGRADE=1 too:
+     PROTON_USE_OPTISCALER=1 PROTON_FSR4_UPGRADE=1 WINEDLLOVERRIDES="version=n,b" %command%
+   Properties > Compatibility: pick a GE-Proton (10-x or newer) or
+   Proton-CachyOS build. Valve's own Proton does not carry OptiScaler.
+3. Start the game. Proton places OptiScaler as nvngx.dll in Bin/Win64 for
+   the session; the mod finds it there (KCDDLSS.log: "NGX core from the
+   game folder: ...\Bin\Win64\nvngx.dll"). Leave NgxDll = empty in
+   KCDDLSS.ini on Linux.
+4. Press Insert in the game for OptiScaler's overlay. The upscaler can also
+   be preset in the launch options with PROTON_OPTISCALER_CONFIG, for
+   example FSR 4 for everything:
+     PROTON_OPTISCALER_CONFIG="Upscalers.Dx11Upscaler=fsr31_12;FSR.Fsr4Update=true"
+   OptiScaler's own ini lives in the game's Proton prefix:
+   steamapps/compatdata/379430/pfx/drive_c/windows/system32/umu/OptiScaler.ini
+Tested on Bazzite with GE-Proton 11-12 (RX 9070 XT, FSR 4 via DX12): the
+game reports itself as an RTX 4090 to the mod, that is OptiScaler's
+intended spoofing and harmless.
+
+GOOD TO KNOW
+- OptiScaler, FSR and XeSS are their authors' work under their own
+  licences (MIT for OptiScaler and FSR, Intel's licence for XeSS). Read
+  the Licenses folder in the OptiScaler archive.
+- The mod's start-up settings (native-resolution output, game AA off,
+  motion vectors, full-res GI) are the same with OptiScaler.
+- Problems with the picture inside OptiScaler (ghosting, a wrong
+  upscaler chosen) belong to OptiScaler's settings; problems with the
+  mod (nothing in KCDDLSS.log, no CreateFeature line) belong to the mod.

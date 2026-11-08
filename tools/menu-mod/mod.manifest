@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<kcd_mod>
+  <info>
+    <name>KCD DLSS Menu</name>
+    <description>Adds a DLSS / Upscaling row (Off, Quality, Balanced, Performance, Ultra Performance) to the Advanced Graphics settings page. The row reads and writes the console variable r_DLSSMode, which the KCDDLSS plugin registers.</description>
+    <author>mrtaxerman</author>
+    <version>0.6.9</version>
+    <created_on>2026-11-08</created_on>
+  </info>
+  <supports>
+    <kcd_version>1.9.*</kcd_version>
+  </supports>
+</kcd_mod>
