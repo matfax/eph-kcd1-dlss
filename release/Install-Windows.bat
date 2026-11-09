@@ -68,10 +68,9 @@ if exist "%B%\KCDGrassFix.asi" (
   ren "%B%\KCDGrassFix.asi" "KCDGrassFix.asi.off" && echo Grass: standalone 30 FPS Grass Fix set aside as KCDGrassFix.asi.off ^(this mod contains it^).
 )
 
-rem Options-menu row ("DLSS / Upscaling" in Options > Advanced Graphics): a small UI mod in Mods\KCDDLSS. The ini works without it.
-if not exist "%GAME%\Mods\KCDDLSS\Data" mkdir "%GAME%\Mods\KCDDLSS\Data" 2>nul
-copy /y "%SELF%\install\Mods\KCDDLSS\mod.manifest" "%GAME%\Mods\KCDDLSS\mod.manifest" >nul && copy /y /b "%SELF%\install\Mods\KCDDLSS\Data\kcddlss_menu.pak" "%GAME%\Mods\KCDDLSS\Data\kcddlss_menu.pak" >nul && (echo Menu: Mods\KCDDLSS copied ^(DLSS row in Options ^> Advanced Graphics^).) || echo Menu: could not copy Mods\KCDDLSS. The mod still works, set the mode in KCDDLSS.ini.
-if exist "%GAME%\Mods\mod_order.txt" (findstr /i /x "KCDDLSS" "%GAME%\Mods\mod_order.txt" >nul || (echo.& echo KCDDLSS)>>"%GAME%\Mods\mod_order.txt")
+rem Options-menu rows: since 0.8.0 the plugin adds them to the page in memory. The Mods\KCDDLSS pak of BETA 1/2 must go (it would double the rows).
+if exist "%GAME%\Mods\KCDDLSS" (rmdir /s /q "%GAME%\Mods\KCDDLSS" && echo Menu: old Mods\KCDDLSS pak of BETA 1/2 removed ^(the rows now come from the plugin itself^).)
+if exist "%GAME%\Mods\mod_order.txt" (findstr /i /x "KCDDLSS" "%GAME%\Mods\mod_order.txt" >nul && (findstr /v /i /x "KCDDLSS" "%GAME%\Mods\mod_order.txt" > "%GAME%\Mods\mod_order.kcddlss-tmp" & move /y "%GAME%\Mods\mod_order.kcddlss-tmp" "%GAME%\Mods\mod_order.txt" >nul))
 
 copy /y "%SELF%\Uninstall-Windows.bat" "%GAME%\KCDDLSS-Uninstall.bat" >nul && echo Uninstaller copied to the game folder: KCDDLSS-Uninstall.bat
 echo.

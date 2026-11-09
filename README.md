@@ -17,12 +17,11 @@ How it works in detail: [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 
 ## Download
 
-`KCDDLSS-BETA-2.7z` from the [Releases page](https://github.com/qahtni/kcd1-dlss/releases/latest) or Nexus Mods. It contains:
+`KCDDLSS-BETA-3.7z` from the [Releases page](https://github.com/qahtni/kcd1-dlss/releases/latest) or Nexus Mods. It contains:
 
 - `install/KCDDLSS.asi`: the mod. `install/KCDDLSS.ini`: its settings.
 - `install/nvngx_dlss.dll`: NVIDIA DLSS 310.9.1 with its licence.
 - `install/version.dll`: [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) 10.0.2 by ThirteenAG (MIT licence, included). It loads `.asi` plugins.
-- `install/Mods/KCDDLSS`: the two menu rows, a small UI mod for the game's `Mods` folder.
 - `debug/KCDDLSS.asi`: the same mod with full diagnostics in the log, for bug reports only.
 - Installers and uninstallers for Windows and Steam Deck / Linux, plain text. `OPTISCALER.txt` for AMD and Intel cards.
 
@@ -38,7 +37,7 @@ How it works in detail: [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 1. Extract the archive anywhere, for example to Downloads.
 2. Double-click **Install-Windows.bat**.
 
-It finds the game in your Steam libraries (else the GOG / Epic default folders), copies the four files to `Bin\Win64` and the menu rows to `Mods\KCDDLSS`. If it can't find the game, drag the game folder onto the installer. A standalone 30 FPS Grass Fix is set aside (`KCDGrassFix.asi.off`), this mod contains the same fix.
+It finds the game in your Steam libraries (else the GOG / Epic default folders), copies the four files to `Bin\Win64` (and removes the `Mods\KCDDLSS` pak of BETA 1/2). If it can't find the game, drag the game folder onto the installer. A standalone 30 FPS Grass Fix is set aside (`KCDGrassFix.asi.off`), this mod contains the same fix.
 
 ### Steam Deck / Linux
 1. Desktop Mode, extract the archive anywhere.
@@ -48,7 +47,7 @@ It finds the game in your Steam libraries (else the GOG / Epic default folders),
 It finds the game in every Steam library (SD card and Flatpak Steam included) and in `~/Games` (Heroic, Lutris), copies the files and tells Proton to load `version.dll` from the game folder (`WINEDLLOVERRIDES="version=n,b"`, in the game's launch options and in the Proton prefix; either one is enough). For a game somewhere else: `bash Install-Linux-SteamDeck.sh "/path/to/KingdomComeDeliverance"`.
 
 ### By hand
-In the game folder: copy `install\KCDDLSS.asi`, `KCDDLSS.ini`, `nvngx_dlss.dll` and `version.dll` into `Bin\Win64`, and the folder `install\Mods\KCDDLSS` into `Mods` (add a line `KCDDLSS` to `Mods\mod_order.txt` if that file exists). Steam Deck / Linux only: launch options `WINEDLLOVERRIDES="version=n,b" %command%`.
+In the game folder: copy `install\KCDDLSS.asi`, `KCDDLSS.ini`, `nvngx_dlss.dll` and `version.dll` into `Bin\Win64`. Coming from BETA 1 or 2, delete the folder `Mods\KCDDLSS` (and its line in `Mods\mod_order.txt`): the plugin draws the menu rows itself since BETA 3.
 
 ### Check that it works
 After the game reaches the menu, `Bin\Win64\KCDDLSS.log` contains a line like `dlss: CreateFeature 1920x1080 -> 3840x2160 Performance ... result 0x1` (your sizes). The 3D main menu is already upscaled.
@@ -65,7 +64,7 @@ After the game reaches the menu, `Bin\Win64\KCDDLSS.log` contains a line like `d
 
 - The first start after installing switches the game to native-resolution output; in exclusive fullscreen the picture can go black for a moment, the mod minimizes and restores the window to recover.
 - The game's AA option is forced off while the mod runs (`Prereq = 0` in the ini if you really want to manage it).
-- The menu rows replace the Advanced Graphics page definition (`Libs/UI/UIActions/MM_AdvancedGraphics.xml`); another mod changing the same page conflicts, the later one in `mod_order.txt` wins. The "Unsupported" choice is visible on every system because that page is static; picking it snaps back. A later version patches the page at run time instead.
+- The menu rows are added in memory to the Advanced Graphics page (`Libs/UI/UIActions/MM_AdvancedGraphics.xml`) as the game loads it, whichever mod's copy of that page is active: no pak, no `mod_order.txt` entry. `MenuRows = 0` in the ini turns it off.
 - Tested on Windows 11 (RTX 4070: DLSS, and OptiScaler FSR / XeSS) and Linux with Proton (Bazzite with an RX 9070 XT and OptiScaler FSR 4; Steam Deck with OptiScaler). Not tested: GOG and Epic copies, Flatpak Steam and Heroic on real machines.
 
 ## Building from source
@@ -77,14 +76,14 @@ tools/asi/build.sh                                   # -> tools/asi/out/KCDDLSS.
 tools/asi/build.sh /path/to/WHGame.dll               # same, but first regenerate tools/asi/sig.h from your stock Steam 1.9.8 WHGame.dll
 ```
 
-The menu rows are a patch against the game's own page definition, which is not stored here. Extract `Libs/UI/UIActions/MM_AdvancedGraphics.xml` (and the other `UIActions` files, used for validation) from `Data/GameData.pak` (a plain zip archive) to a folder, then:
+The menu rows are a patch against the game's own page definition, which is not stored here; `tools/menu-mod/gen_menu_rows_h.py` turns the patched page into `tools/asi/menu_rows.h`, the text the plugin inserts at load time (the pak build below is kept for reference only). Extract `Libs/UI/UIActions/MM_AdvancedGraphics.xml` (and the other `UIActions` files, used for validation) from `Data/GameData.pak` (a plain zip archive) to a folder, then:
 
 ```sh
 cp <folder>/GameData/Libs/UI/UIActions/MM_AdvancedGraphics.xml tools/menu-mod/MM_AdvancedGraphics.xml
 patch --binary -u tools/menu-mod/MM_AdvancedGraphics.xml tools/menu-mod/MM_AdvancedGraphics.patch
 python3 -I tools/menu-mod/build_menu_mod.py --extract-root <folder>   # validates the flowgraph, -> dist/mods/KCDDLSS
 python3 -I tools/menu-mod/verify_menu_mod.py                           # checks the rows, choices and reset value
-release/build_release.sh BETA-2 /path/to/dinput8.dll /path/to/UAL-LICENSE /path/to/nvngx_dlss.dll /path/to/DLSS-LICENSE.txt   # -> dist/KCDDLSS-BETA-2.7z
+release/build_release.sh BETA-3 /path/to/dinput8.dll /path/to/UAL-LICENSE /path/to/nvngx_dlss.dll /path/to/DLSS-LICENSE.txt   # -> dist/KCDDLSS-BETA-3.7z
 ```
 
 `build_release.sh` takes `dinput8.dll` from `Ultimate-ASI-Loader-NoPDB_x64.zip` of [Ultimate ASI Loader v10.0.2](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/tag/v10.0.2), its licence, `nvngx_dlss.dll` from the [DLSS SDK](https://github.com/NVIDIA/DLSS) and that repository's `LICENSE.txt`. None of them is stored here, see [THIRD_PARTY.md](THIRD_PARTY.md).

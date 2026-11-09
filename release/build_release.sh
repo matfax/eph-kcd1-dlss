@@ -31,14 +31,7 @@ mkdir -p "$S/debug"; cp -p "$DASI" "$S/debug/KCDDLSS.asi"; cp -p "$ASI" "$S/inst
 sed 's/\r$//; s/$/\r/' "$INI" > "$S/install/KCDDLSS.ini"
 sed 's/\r$//; s/$/\r/' "$LIC" > "$S/install/Ultimate-ASI-Loader-LICENSE.txt"
 sed 's/\r$//; s/$/\r/' "$DLIC" > "$S/install/NVIDIA-DLSS-LICENSE.txt"
-MENU=dist/mods/KCDDLSS   # options-menu row (tools/menu-mod/build_menu_mod.py): Mods/KCDDLSS/{mod.manifest,Data/kcddlss_menu.pak}
-[ -f "$MENU/mod.manifest" ] && [ -f "$MENU/Data/kcddlss_menu.pak" ] || { echo "$MENU is missing: run tools/menu-mod/build_menu_mod.py first"; exit 1; }
-mkdir -p "$S/install/Mods/KCDDLSS/Data"; cp -p "$MENU/Data/kcddlss_menu.pak" "$S/install/Mods/KCDDLSS/Data/"
-python3 -I - "$MENU/mod.manifest" "$VER" > "$S/install/Mods/KCDDLSS/mod.manifest" <<'PY'
-import re,sys
-s=open(sys.argv[1]).read(); s2=re.sub(r'(<version>)[^<]*(</version>)', r'\g<1>'+sys.argv[2]+r'\g<2>', s)
-sys.stdout.write(s2.replace('\r\n','\n').replace('\n','\r\n'))
-PY
+# 0.8.0: no Mods/KCDDLSS pak any more; the plugin adds the menu rows in memory (tools/asi/menu_rows.h from tools/menu-mod/MM_AdvancedGraphics.xml)
 fill() { sed -e "s/@VERSION@/$VER/g; s/@ASI_SHA@/$ASI_SHA/; s/@UAL_SHA@/$UAL_SHA/; s/@DLSS_SHA@/$DLSS_SHA/; s/@ASI_SIZE@/$(stat -c %s "$ASI")/; s/@UAL_SIZE@/$(stat -c %s "$UAL")/; s/@DLSS_SIZE@/$(stat -c %s "$DLSS")/; s/@DLSS_VERSION@/$DLSS_VERSION/g" "$1"; }
 for f in Install-Windows.bat Uninstall-Windows.bat README.txt OPTISCALER.txt; do fill "$R/$f" | sed 's/\r$//; s/$/\r/' > "$S/$f"; done
 for f in Install-Linux-SteamDeck.sh Uninstall-Linux-SteamDeck.sh; do

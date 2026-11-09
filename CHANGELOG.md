@@ -1,5 +1,14 @@
 # Changelog
 
+## BETA 3 (2026-11-09)
+
+Plugin build 0.8.0.
+
+- No more `Mods/KCDDLSS` pak: the two menu rows are inserted into the Advanced Graphics page in memory while the game loads it (`ISystem::LoadXmlFromFile` hooked; the page is read through the game's own pak system, so another mod's copy of the page gets the rows too). The installers remove the BETA 1/2 pak and its `mod_order.txt` line; by hand, delete `Mods/KCDDLSS`. `MenuRows = 0` in the ini turns the rows off.
+- The "Unsupported" choice is only added when no upscaler exists.
+- Verified on the PC (RTX 4070, 1920x1080 desktop, profile anti-aliasing 2, Performance: rows shown, a row change applied live, exclusive fullscreen and borderless window both upscale) and on Bazzite (Proton, OptiScaler FSR 4).
+- Tried and dropped: the game's own alt-tab repair routine (`DeviceInfo::OnActivate`) as a replacement for the minimize/restore fallback kick. It rebuilds the swap chain but minimizes the window as well, so the kick stays; the routine is reachable through a `kick` line in `KCDDLSS.cmd` for experiments.
+
 ## BETA 2 (2026-11-09)
 
 Plugin build 0.7.5. Two player reports fixed (details in BUGS.md):

@@ -31,9 +31,6 @@ FILES IN THIS ARCHIVE
   licence, install\NVIDIA-DLSS-LICENSE.txt). Kept if one is already there.
 - install\version.dll: Ultimate ASI Loader 10.0.2 by ThirteenAG (MIT
   licence, install\Ultimate-ASI-Loader-LICENSE.txt). It loads .asi plugins.
-- install\Mods\KCDDLSS: the two options-menu rows ("DLSS / Upscaling" and
-  "DLSS Model" in Options > Advanced Graphics), a small UI mod for the
-  game's Mods folder.
 - debug\KCDDLSS.asi: the same mod with full diagnostics in KCDDLSS.log.
   Only for bug reports, see REPORTING A PROBLEM.
 - Install-Windows.bat, Uninstall-Windows.bat
@@ -45,7 +42,7 @@ INSTALL (WINDOWS)
 1. Extract the archive anywhere, for example to Downloads.
 2. Double-click Install-Windows.bat in the extracted folder.
 It finds the game in your Steam libraries (else GOG / Epic default folders)
-and copies the four files to Bin\Win64 and the menu row to Mods\KCDDLSS.
+and copies the four files to Bin\Win64.
 If it can't find the game, drag the game folder onto Install-Windows.bat.
 Windows needs no launch options.
 If you have the standalone 30 FPS Grass Fix, the installer sets it aside
@@ -60,8 +57,8 @@ INSTALL ON STEAM DECK / LINUX
      bash Install-Linux-SteamDeck.sh
    and press Enter.
 It finds the game in every Steam library (SD card included, also Flatpak
-Steam) and in ~/Games (Heroic, Lutris), copies the files to Bin/Win64 and
-the menu row to Mods/KCDDLSS, and tells Proton to load version.dll from the game folder (Proton prefers its
+Steam) and in ~/Games (Heroic, Lutris), copies the files to Bin/Win64
+and tells Proton to load version.dll from the game folder (Proton prefers its
 own built-in version.dll otherwise, and the mod would not load). It does
 that in two places: the game's launch options in Steam get
 WINEDLLOVERRIDES="version=n,b" in front of what is already there (Steam
@@ -80,9 +77,8 @@ To open the game folder: in Steam, right-click Kingdom Come: Deliverance >
 Manage > Browse local files.
 1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\nvngx_dlss.dll
    and install\version.dll into Bin\Win64 (the folder with KingdomCome.exe).
-   Copy the folder install\Mods\KCDDLSS into the game's Mods folder (make
-   Mods if it does not exist). If Mods\mod_order.txt exists, add a line
-   KCDDLSS to it.
+   Coming from BETA 1 or 2: delete the folder Mods\KCDDLSS (and its line in
+   Mods\mod_order.txt); the plugin draws the menu rows itself now.
 2. Steam Deck / Linux only: set the game's launch options to
      WINEDLLOVERRIDES="version=n,b" %command%
    If there was something in the box already, keep it after %command%.
@@ -119,7 +115,7 @@ On a PC without an upscaler (no NVIDIA card and no OptiScaler) both rows
 show "Unsupported" and cannot be changed; the game renders at native size.
 Both switch live (no Apply needed; Apply is fine too) and are saved into
 Bin\Win64\KCDDLSS.ini (Mode = and Preset =), so they stick across starts.
-If the rows are missing, the Mods\KCDDLSS folder was not installed; both
+If the rows are missing, KCDDLSS.log says why (a "menu:" line); both
 can always be set in the ini instead. A few of the mod's lines (version,
 mode and model changes, failures) also appear in the game's console (tilde
 key) and in kcd.log, prefixed [KCDDLSS]; the full log is
@@ -188,27 +184,36 @@ UNINSTALL
   Uninstall-Linux-SteamDeck.sh in the extracted archive do the same. They
   remove KCDDLSS.asi, KCDDLSS.ini, KCDDLSS.log and the licence texts,
   remove nvngx_dlss.dll and version.dll only if they are the shipped files,
-  remove Mods\KCDDLSS (and its mod_order.txt line), and rename
+  remove an old Mods\KCDDLSS of BETA 1/2 (and its mod_order.txt line), and rename
   KCDGrassFix.asi.off back to KCDGrassFix.asi. On Linux they
   also remove the launch option and the prefix setting (backups are kept).
 - By hand: delete those files from Bin\Win64 (keep version.dll if you use
-  other .asi mods) and the Mods\KCDDLSS folder. On Linux also remove WINEDLLOVERRIDES="version=n,b"
+  other .asi mods). On Linux also remove WINEDLLOVERRIDES="version=n,b"
   from the launch options.
 Nothing else was changed: the game's own settings were only set in memory.
 
 GOOD TO KNOW
-- Works next to other mods. The menu row (Mods\KCDDLSS) replaces the
-  Advanced Graphics page definition (Libs/UI/UIActions/MM_AdvancedGraphics
-  .xml); another mod that changes that same page conflicts with it, the
-  later one in Mods\mod_order.txt wins. Everything else is in memory. If
-  you already use another ASI loader as version.dll, the installer leaves
-  it alone and the mod loads through it.
+- Works next to other mods. Everything is done in memory: the menu rows
+  are added to the Advanced Graphics page (Libs/UI/UIActions/
+  MM_AdvancedGraphics.xml) as the game loads it, whichever mod's copy of
+  that page is active, so no pak and no mod_order.txt entry. MenuRows = 0
+  in KCDDLSS.ini turns that off. If you already use another ASI loader as
+  version.dll, the installer leaves it alone and the mod loads through it.
 - Tested on Windows 11 (RTX 4070, DLSS and OptiScaler FSR/XeSS) and on
   Linux with Proton (Bazzite, RX 9070 XT with OptiScaler FSR 4).
 - The log is plain text and contains no personal data beyond the game path.
 
 CHANGES
 @VERSION@
+- No more Mods\KCDDLSS pak: the two menu rows are added to the Advanced
+  Graphics page in memory while the game loads it (works with other mods'
+  copies of that page; MenuRows = 0 in the ini turns it off). The
+  installer removes the BETA 1/2 pak; by hand, delete Mods\KCDDLSS.
+- The "Unsupported" choice is only shown when no upscaler exists.
+- A failing first frame is now repaired with the game's own alt-tab
+  routine (no window minimize/restore); the old kick stays as a second step.
+- Debug: a "kick" line in KCDDLSS.cmd runs that repair on demand.
+BETA 2
 - Fix: black screen at start (the game's stretch drew nothing) until an
   alt-tab, seen when the profile's anti-aliasing was SMAA 1TX/2TX: the AA
   mode is now forced to 0 before the first frame and kept there (the

@@ -129,14 +129,11 @@ if [ -e "$B/nvngx_dlss.dll" ]; then echo "DLSS: Bin/Win64/nvngx_dlss.dll is alre
 else cp -f "$SELF/install/nvngx_dlss.dll" "$B/nvngx_dlss.dll" || { rm -f "$B/nvngx_dlss.dll"; die "Could not copy nvngx_dlss.dll to $B (disk full?). The half-copied file was removed."; }
      cp -f "$SELF/install/NVIDIA-DLSS-LICENSE.txt" "$B/NVIDIA-DLSS-LICENSE.txt" 2>/dev/null; echo "DLSS: Bin/Win64/nvngx_dlss.dll copied (NVIDIA DLSS @DLSS_VERSION@)."; fi
 if [ -e "$B/KCDGrassFix.asi" ]; then mv -f "$B/KCDGrassFix.asi" "$B/KCDGrassFix.asi.off" && echo "Grass: standalone 30 FPS Grass Fix set aside as KCDGrassFix.asi.off (this mod contains it)."; fi
-# Options-menu row ("DLSS / Upscaling" in Options > Advanced Graphics): a small UI mod in Mods/KCDDLSS. The ini works without it.
-MODS="$GAME/Mods"; [ -d "$GAME/mods" ] && [ ! -d "$MODS" ] && MODS="$GAME/mods"
-if mkdir -p "$MODS/KCDDLSS/Data" && cp -f "$SELF/install/Mods/KCDDLSS/mod.manifest" "$MODS/KCDDLSS/mod.manifest" && cp -f "$SELF/install/Mods/KCDDLSS/Data/kcddlss_menu.pak" "$MODS/KCDDLSS/Data/kcddlss_menu.pak"; then
-  echo "Menu: Mods/KCDDLSS copied (DLSS row in Options > Advanced Graphics)."
-  if [ -f "$MODS/mod_order.txt" ] && ! grep -qix 'KCDDLSS' "$MODS/mod_order.txt"; then
-    [ -n "$(tail -c1 "$MODS/mod_order.txt")" ] && echo >> "$MODS/mod_order.txt"; echo KCDDLSS >> "$MODS/mod_order.txt"; echo "Menu: KCDDLSS added to Mods/mod_order.txt."
-  fi
-else echo "Menu: could not copy Mods/KCDDLSS. The mod still works, set the mode in KCDDLSS.ini."; fi
+# Options-menu rows: since 0.8.0 the plugin adds them to the page in memory. The Mods/KCDDLSS pak of BETA 1/2 must go (it would double the rows).
+for MODS in "$GAME/Mods" "$GAME/mods"; do
+  [ -d "$MODS/KCDDLSS" ] && rm -rf "$MODS/KCDDLSS" && echo "Menu: old Mods/KCDDLSS pak of BETA 1/2 removed (the rows now come from the plugin itself)."
+  [ -f "$MODS/mod_order.txt" ] && grep -qix 'KCDDLSS' "$MODS/mod_order.txt" && { grep -vix 'KCDDLSS' "$MODS/mod_order.txt" > "$MODS/mod_order.kcddlss-tmp"; mv -f "$MODS/mod_order.kcddlss-tmp" "$MODS/mod_order.txt"; }
+done
 if [ -e "$B/version.dll" ] && [ "$(sha "$B/version.dll")" != "$UAL_SHA" ]; then
   echo "Loader: Bin/Win64/version.dll is already there and is a different file. Left alone."
   echo "        If it is an ASI loader, the mod loads through it. Check Bin/Win64/KCDDLSS.log after a start."
