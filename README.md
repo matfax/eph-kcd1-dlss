@@ -17,7 +17,7 @@ How it works in detail: [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 
 ## Download
 
-`KCDDLSS-BETA-1.7z` from the [Releases page](https://github.com/qahtni/kcd1-dlss/releases/latest) or Nexus Mods. It contains:
+`KCDDLSS-BETA-2.7z` from the [Releases page](https://github.com/qahtni/kcd1-dlss/releases/latest) or Nexus Mods. It contains:
 
 - `install/KCDDLSS.asi`: the mod. `install/KCDDLSS.ini`: its settings.
 - `install/nvngx_dlss.dll`: NVIDIA DLSS 310.9.1 with its licence.
@@ -84,7 +84,7 @@ cp <folder>/GameData/Libs/UI/UIActions/MM_AdvancedGraphics.xml tools/menu-mod/MM
 patch --binary -u tools/menu-mod/MM_AdvancedGraphics.xml tools/menu-mod/MM_AdvancedGraphics.patch
 python3 -I tools/menu-mod/build_menu_mod.py --extract-root <folder>   # validates the flowgraph, -> dist/mods/KCDDLSS
 python3 -I tools/menu-mod/verify_menu_mod.py                           # checks the rows, choices and reset value
-release/build_release.sh BETA-1 /path/to/dinput8.dll /path/to/UAL-LICENSE /path/to/nvngx_dlss.dll /path/to/DLSS-LICENSE.txt   # -> dist/KCDDLSS-BETA-1.7z
+release/build_release.sh BETA-2 /path/to/dinput8.dll /path/to/UAL-LICENSE /path/to/nvngx_dlss.dll /path/to/DLSS-LICENSE.txt   # -> dist/KCDDLSS-BETA-2.7z
 ```
 
 `build_release.sh` takes `dinput8.dll` from `Ultimate-ASI-Loader-NoPDB_x64.zip` of [Ultimate ASI Loader v10.0.2](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/tag/v10.0.2), its licence, `nvngx_dlss.dll` from the [DLSS SDK](https://github.com/NVIDIA/DLSS) and that repository's `LICENSE.txt`. None of them is stored here, see [THIRD_PARTY.md](THIRD_PARTY.md).

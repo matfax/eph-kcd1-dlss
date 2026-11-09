@@ -24,7 +24,7 @@
 #define DBG 0   /* release build: diagnostics (probe, NGX chatter, post-effect tracing) compiled out, console gets the bare minimum */
 #define BUILD_TAG ""
 #endif
-#define PLUGIN_TITLE "KCD DLSS 0.7.4 (M3: DLSS modes, render presets, live mip bias; prerequisites forced + watchdog; r_DLSSMode/r_DLSSPreset menu cvars) + 30 FPS Grass Fix + Disable Forced Conversation Sharpening" BUILD_TAG
+#define PLUGIN_TITLE "KCD DLSS 0.7.5 (M3: DLSS modes, render presets, live mip bias; prerequisites forced + watchdog; r_DLSSMode/r_DLSSPreset menu cvars) + 30 FPS Grass Fix + Disable Forced Conversation Sharpening" BUILD_TAG
 #define NGX_VERSION_API 0x15u
 #define NGX_ENGINE_TYPE_CUSTOM 0
 #define NGX_FEATURE_SUPERSAMPLING 1
@@ -549,7 +549,7 @@ static UINT device_vendor(ID3D11Device *dev, WCHAR *desc, UINT desc_cap)
 }
 
 static void hook_sampler_state(ID3D11Device *dev);
-static void hook_ctx(ID3D11DeviceContext *ctx);
+static void hook_ctx(ID3D11DeviceContext *ctx); static void aa_pin_install(const char *src);
 static HRESULT WINAPI my_D3D11CreateDevice(IDXGIAdapter *a, D3D_DRIVER_TYPE dt, HMODULE sw, UINT flags, const D3D_FEATURE_LEVEL *fl, UINT nfl,
                                            UINT sdk, ID3D11Device **dev, D3D_FEATURE_LEVEL *outfl, ID3D11DeviceContext **ctx)
 {
@@ -562,6 +562,7 @@ static HRESULT WINAPI my_D3D11CreateDevice(IDXGIAdapter *a, D3D_DRIVER_TYPE dt, 
         vendor = device_vendor(*dev, desc, 64);
         g_devices++;
         LOG(log_s("  adapter vendor "); log_x(vendor); log_s(" \""); log_w(desc); log_s("\" (device #"); log_u((DWORD)g_devices); log_s(")"));
+        aa_pin_install("device");
         /* 0.7.4: decide now whether any upscaler can run, so the modes keep the native render size otherwise (Steam Deck without
          * the OptiScaler Proton, 2026-11-08: the plugin set 640x400 and the game showed its own blocky stretch) */
         if (!g_no_upscaler && vendor && vendor != 0x1414 && (!g_ngx.core || (vendor != 0x10de && !g_core_from_game_dir))) {
@@ -1699,7 +1700,15 @@ static void mode_apply(int mode, const char *src)
     g_cfg.mode = mode;
     if (mode == -1) { g_mode_rw = g_mode_rh = 0; LOG(log_s("exec("); log_s(src); log_s("): mode Auto: the game's resolution decides the DLSS quality")); return; }
     if (g_true_nw >= 640 && g_true_nh >= 480) { nw = g_true_nw; nh = g_true_nh; }
-    else if (g_wh_base) { BYTE *r = g_wh_base + RVA_RENDERER; nw = *(UINT *)(r + R_NATIVE_W); nh = *(UINT *)(r + R_NATIVE_H); }
+    else {   /* 0.7.5: before the first upscaled frame the renderer's native fields still hold the pre-flip output = the profile's res_x/res_y,
+              * which the game saves as OUR render size at exit (run073: 3840x2160 -> 1920x1080): a player whose stretch never worked would get a
+              * smaller "native" every session. In fullscreen with r_FullscreenNativeRes the output is the desktop mode: read it from the
+              * registry (ENUM_REGISTRY_SETTINGS = the desktop, not a temporary exclusive mode). */
+        void *cvf = cvar_find("r_Fullscreen"), *cvn = cvar_find("r_FullscreenNativeRes"); DEVMODEW dm;
+        memset(&dm, 0, sizeof dm); dm.dmSize = sizeof dm;
+        if (cvf && cvar_int(cvf) && cvn && cvar_int(cvn) && EnumDisplaySettingsW(NULL, ENUM_REGISTRY_SETTINGS, &dm) && dm.dmPelsWidth >= 640 && dm.dmPelsHeight >= 480) { nw = dm.dmPelsWidth; nh = dm.dmPelsHeight; how = "factor table, desktop size"; }
+        else if (g_wh_base) { BYTE *r = g_wh_base + RVA_RENDERER; nw = *(UINT *)(r + R_NATIVE_W); nh = *(UINT *)(r + R_NATIVE_H); }
+    }
     if (nw < 640 || nh < 480 || nw > 16384 || nh > 16384) { nw = (UINT)GetSystemMetrics(SM_CXSCREEN); nh = (UINT)GetSystemMetrics(SM_CYSCREEN); }
     if (mode == 5) { rw = nw; rh = nh; how = "native"; }
     else if (g_dl.disabled || g_no_upscaler) { rw = nw; rh = nh; how = "no upscaler available: native"; }
@@ -1838,12 +1847,69 @@ static void dlsspreset_poll(void)
  * DLSS Performance half res would be a quarter of native, upscaled twice. The game's profile (attributes.xml) re-applies its
  * own r_AntialiasingMode / resolution after a settings-menu change: the watchdog below re-forces within ~3 s. */
 static void *cvar_find(const char *name) { void *console = console_ptr(); return console ? ((PFN_GetCVar)VT(console, 23))(console, name) : NULL; }
+/* 0.7.5 (BUG-1): a LIVE r_AntialiasingMode change while the game is still starting up (profile value 2/3 -> our 0 at the 6 s tick) left
+ * the native-res stretch drawing nothing for seconds: black screen (run072: still nothing 2.5 s after the minimize/restore kick, then it
+ * recovered by itself; the same switch at the main menu is harmless; runs whose profile already had 0 never failed) = the PostAA.cfx
+ * permutation is recompiled asynchronously and the UpscaleImage draw is skipped until it is ready. So the AA mode is forced to 0 as soon
+ * as the cvar exists (device creation, before the first frame) and PINNED: the int-cvar class's Set(int) (ICVar slot 7, where Set(float),
+ * Set(const char*) and ForceSet all end up, FINDINGS_KCD_ICVAR.md) is hooked and every value for this one cvar becomes 0. */
+typedef void (*PFN_SetInt)(void *cv, int v); typedef void (*PFN_SetFloat)(void *cv, float v); typedef void (*PFN_SetStr)(void *cv, const char *v);
+static void *g_cv_aa; static void **g_aa_vt; static PFN_SetInt g_aa_orig_set; static PFN_SetFloat g_aa_orig_setf; static PFN_SetStr g_aa_orig_sets, g_aa_orig_force; static int g_aa_pin_logs;
+/* All four entry points are pinned (run073): the profile's Set(const char*) reaches Set(int) by a DIRECT call, the cvar's OnChange callback
+ * (0x181fbe3dc) then calls Set(int) through the vtable (our hook -> 0) but afterwards stores its own stale value into the renderer's
+ * effective AA copy (0x18358fcc4) -> the cvar read 0 while the renderer ran SMAA 1TX. With the string/float/force entries pinned too the
+ * value 2 never exists. */
+static int aa_pinned(void *cv, int v, const char *how)
+{
+    if (cv != g_cv_aa || !g_cfg.prereq || v == 0) return 0;
+    if (g_aa_pin_logs++ < 5) LOG(log_s("pin: r_AntialiasingMode "); log_i(v); log_s(" requested via "); log_s(how); log_s(" (profile load / settings menu): kept at 0, DLSS replaces the AA"));
+    return 1;
+}
+static int str_to_int(const char *v) { int n = 0, neg = 0; if (!v) return 0; while (*v == ' ') v++; if (*v == '-') { neg = 1; v++; } while (*v >= '0' && *v <= '9') n = n * 10 + (*v++ - '0'); return neg ? -n : n; }
+static void my_cvar_set_int(void *cv, int v) { if (aa_pinned(cv, v, "Set(int)")) v = 0; g_aa_orig_set(cv, v); }
+static void my_cvar_set_float(void *cv, float v) { if (aa_pinned(cv, (int)v, "Set(float)")) { g_aa_orig_set(cv, 0); return; } g_aa_orig_setf(cv, v); }
+static void my_cvar_set_str(void *cv, const char *v) { if (aa_pinned(cv, str_to_int(v), "Set(string)")) { g_aa_orig_set(cv, 0); return; } g_aa_orig_sets(cv, v); }
+static void my_cvar_force(void *cv, const char *v) { if (aa_pinned(cv, str_to_int(v), "ForceSet")) { g_aa_orig_force(cv, "0"); return; } g_aa_orig_force(cv, v); }
+static void aa_pin_install(const char *src)
+{
+    void **vt; DWORD old, tmp; int was;
+    if (g_aa_vt || !g_cfg.prereq || !g_wh_base) return;
+    g_cv_aa = cvar_find("r_AntialiasingMode");
+    if (!g_cv_aa) return;   /* not registered yet: retried at the next device / tick */
+    vt = *(void ***)g_cv_aa;
+    if (!readable((BYTE *)vt, 11 * sizeof(void *)) || !vt[7] || !vt[8] || !vt[9] || !vt[10] || !VirtualProtect(&vt[7], 4 * sizeof(void *), PAGE_READWRITE, &old)) {
+        g_aa_vt = (void **)1; LOG(log_s("pin: r_AntialiasingMode vtable not writable: no pin (the 6 s tick forces it as before)")); return;
+    }
+    g_aa_orig_set = (PFN_SetInt)vt[7]; g_aa_orig_setf = (PFN_SetFloat)vt[8]; g_aa_orig_sets = (PFN_SetStr)vt[9]; g_aa_orig_force = (PFN_SetStr)vt[10];
+    vt[7] = (void *)my_cvar_set_int; vt[8] = (void *)my_cvar_set_float; vt[9] = (void *)my_cvar_set_str; vt[10] = (void *)my_cvar_force;
+    VirtualProtect(&vt[7], 4 * sizeof(void *), old, &tmp);
+    g_aa_vt = vt;
+    was = cvar_int(g_cv_aa);
+    if (was != 0) ((PFN_ForceSet)VT(g_cv_aa, 10))(g_cv_aa, "0");
+    LOG(log_s("pin("); log_s(src); log_s("): r_AntialiasingMode was "); log_i(was); log_s(", now "); log_i(cvar_int(g_cv_aa));
+        log_s("; Set/ForceSet of its cvar class hooked: the value stays 0 (no live AA switch at startup or on a settings Apply); renderer AA copy "); log_i(*(int *)(g_wh_base + RVA_AA_MODE)));
+}
 #define PREREQ_CMDS "r_FullscreenNativeRes 1; r_AntialiasingMode 0; r_MotionVectors 1; r_MotionBlurGBufferVelocity 1"   /* 0.6.8: MaxViewDist left at the game's 32 m (user) */
 #define GI_CMDS "e_svoTI_ResScaleBase 1"
 /* 0.6.8: switching r_FullscreenNativeRes 0 -> 1 live in exclusive fullscreen left the screen black until the user alt-tabbed (the
  * focus loss/regain resets the swap chain; run060). If the stretch keeps failing after that switch, the plugin does the same:
  * minimize + restore its own window once. */
 static int g_flipped, g_kicked; static DWORD g_flip_time, g_kick_time; static HWND g_wnd;
+/* 0.7.5 (BUG-1): the restore half of the kick runs on its own thread: the frame tick stops with the render thread if the game pauses
+ * while minimized (a 1080p/RTX 3080 log ended at the kick line). 2.5 s later the window state is logged and the stretch errors are
+ * re-armed, so a kick that did not help shows up in the log. */
+static DWORD WINAPI kick_thread(LPVOID p)
+{
+    (void)p;
+    Sleep(400);
+    PostMessageW(g_wnd, WM_SYSCOMMAND, SC_RESTORE, 0); g_kicked = 2;
+    Sleep(2500);
+    g_dl.errs = 0;
+    LOG(log_s("display: 2.5 s after the kick: window "); log_s(IsIconic(g_wnd) ? "still minimized" : "restored"); log_s(", ");
+        log_s(GetForegroundWindow() == g_wnd ? "foreground" : "NOT foreground"); log_s(", upscaled frames "); log_u(g_dl.frames);
+        log_s(", stretch errors re-armed (the next failures are logged)"));
+    return 0;
+}
 static BOOL CALLBACK find_wnd_cb(HWND h, LPARAM lp) { DWORD pid = 0; GetWindowThreadProcessId(h, &pid); if (pid == (DWORD)lp && IsWindowVisible(h) && !GetWindow(h, GW_OWNER)) { g_wnd = h; return FALSE; } return TRUE; }
 static void prereq_apply(const char *src)
 {
@@ -1857,6 +1923,7 @@ static void cvars_exec_once(void)
     if (g_startup_done) return;
     if (!console_ptr()) return;   /* retry next frame */
     prereq_apply("init");
+    LOG(log_s("exec(init): renderer AA mode copy "); log_i(*(int *)(g_wh_base + RVA_AA_MODE)); log_s(" (0 = the game's SMAA/TAA is off, DLSS does the AA)"));
     g_startup_done = 1;
     if (g_cfg.exec[0]) exec_commands(g_cfg.exec, "ini");
     if (g_cfg.mode != -1) mode_apply(g_cfg.mode, "ini");
@@ -1943,13 +2010,17 @@ static void frame_tick(void)
     if ((int)(now - last) < 500) return;
     last = now;
     if (!g_wh_base) return;
+    if (!g_aa_vt) aa_pin_install("tick");
     if (!g_startup_done && (int)(now - t0) >= 6000) cvars_exec_once();
-    if (g_startup_done && g_flipped && g_kicked < 2) {
-        if (!g_kicked && g_dl.errs >= 3 && g_dl.frames == 0 && (int)(now - g_flip_time) > 1500) {
-            g_wnd = NULL; EnumWindows(find_wnd_cb, (LPARAM)GetCurrentProcessId());
-            if (g_wnd) { PostMessageW(g_wnd, WM_SYSCOMMAND, SC_MINIMIZE, 0); g_kicked = 1; g_kick_time = now; LOG(log_s("display: stretch failing after the native-res switch: minimize/restore kick (swap chain reset)")); }
-            else { g_kicked = 2; LOG(log_s("display: stretch failing after the native-res switch, but no window found for the kick")); }
-        } else if (g_kicked == 1 && (int)(now - g_kick_time) > 400) { PostMessageW(g_wnd, WM_SYSCOMMAND, SC_RESTORE, 0); g_kicked = 2; }
+    if (g_startup_done && g_flipped && !g_kicked && g_dl.errs >= 3 && g_dl.frames == 0 && (int)(now - g_flip_time) > 1500) {
+        g_wnd = NULL; EnumWindows(find_wnd_cb, (LPARAM)GetCurrentProcessId());
+        if (g_wnd) {
+            HANDLE th; g_kicked = 1; g_kick_time = now;
+            PostMessageW(g_wnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+            LOG(log_s("display: stretch failing after the native-res switch: minimize/restore kick (swap chain reset)"));
+            th = CreateThread(NULL, 0, kick_thread, NULL, 0, NULL);
+            if (th) CloseHandle(th); else { Sleep(400); PostMessageW(g_wnd, WM_SYSCOMMAND, SC_RESTORE, 0); g_kicked = 2; }
+        } else { g_kicked = 2; LOG(log_s("display: stretch failing after the native-res switch, but no window found for the kick")); }
     }
     if (g_startup_done) {
         if (g_fx_pending && fx_scan()) { g_fx_pending = 0; LOG(log_s("exec(ini): post effects ready now, Exec line re-run")); exec_commands(g_cfg.exec, "ini"); }
@@ -2024,7 +2095,12 @@ static ID3D11SamplerState *sc_get(ID3D11DeviceContext *ctx, ID3D11SamplerState *
     if (d.MipLODBias > 15.99f) d.MipLODBias = 15.99f;
     ID3D11DeviceContext_GetDevice(ctx, &dev);
     if (!dev) return s;
-    hr = g_real_css ? g_real_css(dev, &d, &b) : ID3D11Device_CreateSamplerState(dev, &d, &b);
+    {   /* 0.7.5 (BUG-2): with ReShade the game's device is a proxy whose vtable we hooked (g_real_css = the proxy's CreateSamplerState),
+         * but a context hooked later (the real one, from dlss_frame) reports the REAL device here: calling the proxy's function on it crashed
+         * at the first upscaled frame. Use the device's own vtable entry, skipping our hook when it is ours (the twin is counted once). */
+        void **dvt = *(void ***)dev;
+        hr = (g_real_css && dvt[23] == (void *)my_CreateSamplerState) ? g_real_css(dev, &d, &b) : ((PFN_CreateSamplerState)dvt[23])(dev, &d, &b);
+    }
     REL(dev);
     if (FAILED(hr) || !b) return s;
     g_css_biased++;
@@ -2064,10 +2140,12 @@ static void rt_track(ID3D11RenderTargetView *const *rtvs, UINT n)
 static void STDMETHODCALLTYPE my_OMSetRT(ID3D11DeviceContext *c, UINT n, ID3D11RenderTargetView *const *rt, ID3D11DepthStencilView *ds) { rt_track(rt, n); frame_tick(); g_ctxh[ctxh_find(c)].omrt(c, n, rt, ds); }
 static void STDMETHODCALLTYPE my_OMSetRTUAV(ID3D11DeviceContext *c, UINT n, ID3D11RenderTargetView *const *rt, ID3D11DepthStencilView *ds, UINT us, UINT nu, ID3D11UnorderedAccessView *const *uav, const UINT *ic)
 { if (n != D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL) rt_track(rt, n); g_ctxh[ctxh_find(c)].omrtuav(c, n, rt, ds, us, nu, uav, ic); }
+static const WCHAR *mod_name(ULONG_PTR addr, ULONG_PTR *base, WCHAR *buf, int n);
+static void log_mod(ULONG_PTR a) { ULONG_PTR base; WCHAR nm[MAX_PATH]; const WCHAR *bn = mod_name(a, &base, nm, MAX_PATH); if (bn) { log_w(bn); log_s("+"); log_x(a - base); } else log_x(a); }
 static void hook_ctx(ID3D11DeviceContext *ctx)
 {
     void **vt; DWORD old, tmp; int i;
-    int slot, rehook = 0;
+    int slot, rehook = 0; static int rehooks[CTXH_MAX], limited[CTXH_MAX], logs[CTXH_MAX]; static DWORD win_t0[CTXH_MAX];
     if (!ctx) return;
     vt = *(void ***)ctx;
     if (!vt) return;
@@ -2077,6 +2155,14 @@ static void hook_ctx(ID3D11DeviceContext *ctx)
      * run 064: the render device's context landed on a "hooked" address, no tick, no DLSS): hook it again in the same slot */
     if (slot == g_ctxh_n && g_ctxh_n >= CTXH_MAX) return;
     rehook = slot < g_ctxh_n;
+    if (rehook) {   /* 0.7.5: the D3D11 runtime puts its own functions back into a context vtable now and then (once or twice after creation
+                     * on every machine; EVERY frame for the real context behind ReShade's proxy, run069/070, while the game binds through the
+                     * proxy anyway). Re-hook, but at most 10 times per 10 s per vtable; the first 3 are logged with the current owners. */
+        DWORD now = GetTickCount();
+        if ((int)(now - win_t0[slot]) > 10000) { win_t0[slot] = now; rehooks[slot] = 0; }
+        if (++rehooks[slot] <= 3 && ++logs[slot] <= 3) LOG(log_s("sampler cache: context vtable "); log_x((ULONG_PTR)vt); log_s(" lost our hooks: OMSetRenderTargets now "); log_mod((ULONG_PTR)vt[33]); log_s(", PSSetSamplers "); log_mod((ULONG_PTR)vt[10]); log_s(" (re-hook "); log_i(logs[slot]); log_s(")"));
+        if (rehooks[slot] > 10) { if (!limited[slot]) { limited[slot] = 1; LOG(log_s("sampler cache: context vtable "); log_x((ULONG_PTR)vt); log_s(" is rewritten every frame (a proxy's real context?): re-hooking at most 10x per 10 s")); } return; }
+    }
     if (!g_sc_cs_init) { InitializeCriticalSection(&g_sc_cs); g_sc_cs_init = 1; }
     if (!VirtualProtect(&vt[10], 61 * sizeof(void *), PAGE_READWRITE, &old)) { LOG(log_s("cannot write the context vtable: no mip bias")); return; }
     g_ctxh[slot].vt = vt;
@@ -2260,6 +2346,44 @@ static VOID CALLBACK on_dll(ULONG reason, const DLL_NOTE *d, PVOID ctx)
     else if (reason == 2) { if ((BYTE *)d->DllBase == g_hooked_base) g_hooked_base = NULL; if ((BYTE *)d->DllBase == g_grass_base) g_grass_base = NULL; }
 }
 
+/* 0.7.5 crash line: a first-chance hardware fault (access violation and friends) is logged once with the faulting module and the
+ * return addresses on the stack that fall inside a module, so a "the game just closes" report names the place (BUG-2: ReShade). */
+static const WCHAR *mod_name(ULONG_PTR addr, ULONG_PTR *base, WCHAR *buf, int n)
+{
+    HMODULE m = NULL; int i, k;
+    *base = 0; buf[0] = 0;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)addr, &m) || !m) return NULL;
+    *base = (ULONG_PTR)m;
+    k = (int)GetModuleFileNameW(m, buf, (DWORD)n); if (k <= 0 || k >= n) return NULL;
+    for (i = k - 1; i > 0 && buf[i - 1] != L'\\'; i--) ;
+    return buf + i;
+}
+static LONG CALLBACK crash_handler(EXCEPTION_POINTERS *ep)
+{
+    static LONG once; DWORD code; ULONG_PTR pc, base, *sp, v; WCHAR nm[MAX_PATH]; const WCHAR *bn; int i, shown = 0;
+    if (!ep || !ep->ExceptionRecord || !ep->ContextRecord) return EXCEPTION_CONTINUE_SEARCH;
+    code = ep->ExceptionRecord->ExceptionCode;
+    if (code != 0xC0000005 && code != 0xC000001D && code != 0xC0000094 && code != 0xC00000FD && code != 0xC0000409 && code != 0xC0000096) return EXCEPTION_CONTINUE_SEARCH;
+    if (InterlockedCompareExchange(&once, 1, 0) != 0) return EXCEPTION_CONTINUE_SEARCH;
+    pc = (ULONG_PTR)ep->ExceptionRecord->ExceptionAddress;
+    if (TryEnterCriticalSection(&g_log_cs)) {
+        log_s("CRASH: exception "); log_x(code); log_s(" at "); log_x(pc);
+        bn = mod_name(pc, &base, nm, MAX_PATH); if (bn) { log_s(" = "); log_w(bn); log_s("+"); log_x(pc - base); }
+        if (code == 0xC0000005 && ep->ExceptionRecord->NumberParameters >= 2) { log_s(ep->ExceptionRecord->ExceptionInformation[0] ? " writing " : " reading "); log_x(ep->ExceptionRecord->ExceptionInformation[1]); }
+        log_s("; stack:");
+        sp = (ULONG_PTR *)ep->ContextRecord->Rsp;
+        for (i = 0; i < 200 && shown < 14; i++) {
+            if (!readable((BYTE *)(sp + i), 8)) break;
+            v = sp[i];
+            if (v < 0x10000 || !readable((BYTE *)v, 1)) continue;
+            bn = mod_name(v, &base, nm, MAX_PATH); if (!bn) continue;
+            log_s(" "); log_w(bn); log_s("+"); log_x(v - base); shown++;
+        }
+        log_end(); LeaveCriticalSection(&g_log_cs);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
 BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
 {
     (void)reserved;
@@ -2269,6 +2393,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
         GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)(void *)on_dll, &pin);
         InitializeCriticalSection(&g_log_cs);
         log_init(self);
+        AddVectoredExceptionHandler(1, crash_handler);
         LOGC(log_s(PLUGIN_TITLE));
         cfg_load();
         ntdll = GetModuleHandleW(L"ntdll.dll");

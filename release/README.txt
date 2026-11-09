@@ -209,4 +209,14 @@ GOOD TO KNOW
 
 CHANGES
 @VERSION@
+- Fix: black screen at start (the game's stretch drew nothing) until an
+  alt-tab, seen when the profile's anti-aliasing was SMAA 1TX/2TX: the AA
+  mode is now forced to 0 before the first frame and kept there (the
+  profile load and the settings menu can no longer switch it live).
+- Fix: crash at the first upscaled frame with ReShade (dxgi.dll) installed.
+- The render size is derived from the desktop resolution from the first
+  frame (the game used to save the plugin's render size as the profile
+  resolution when the upscale never ran).
+- A crash is logged with the module and stack in KCDDLSS.log.
+BETA 1
 - First release.
