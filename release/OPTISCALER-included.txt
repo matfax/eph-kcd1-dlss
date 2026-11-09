@@ -1,0 +1,119 @@
+FSR / XeSS FOR KINGDOM COME: DELIVERANCE THROUGH OPTISCALER
+(the OptiScaler download of DLSS for Kingdom Come: Deliverance @VERSION@)
+
+This download includes OptiScaler @OPTI_VERSION@ and its installers set it up.
+The mod talks to the upscaler through NVIDIA's NGX interface. OptiScaler,
+a free, open-source project by the OptiScaler team, answers that interface
+with AMD FSR 2.2 / 3.1 / 4 or Intel XeSS on any graphics card. NVIDIA DLSS
+itself is not in this download: on a GeForce RTX card take the standard
+download.
+OptiScaler: https://github.com/optiscaler/OptiScaler
+Its wiki:   https://github.com/optiscaler/OptiScaler/wiki
+
+WHAT THE INSTALLER DOES FOR OPTISCALER
+- Copies these files from install\OptiScaler to Bin\Win64 (the folder with
+  KingdomCome.exe):
+    OptiScaler.dll, OptiScaler.ini (kept if you already have one),
+    libxess.dll, libxess_dx11.dll, libxell.dll,
+    amd_fidelityfx_dx12.dll, amd_fidelityfx_upscaler_dx12.dll,
+    amd_fidelityfx_vk.dll
+  and the licences as Bin\Win64\OptiScaler-Licenses.
+- Sets the line NgxDll = OptiScaler.dll in Bin\Win64\KCDDLSS.ini: the mod
+  loads OptiScaler by that name. Do NOT rename OptiScaler.dll to dxgi.dll,
+  winmm.dll or nvngx.dll as the OptiScaler wiki suggests for other games.
+- A different OptiScaler.dll that is already in Bin\Win64 is left alone and
+  the mod uses it.
+The same on Windows and on Steam Deck / Linux. On Linux no OptiScaler Proton
+build is needed: the copy in the game folder is used. If your Proton build
+has its own OptiScaler switched on (PROTON_USE_OPTISCALER=1), turn that off
+for this game or use the standard download: with two OptiScalers at once the
+upscaling still runs, but FSR 4 is not detected.
+Tested: Windows 11 (RTX 4070, FSR 3.1 via DX12) and GE-Proton 11-12 on an
+RX 9070 XT (FSR 4 from the game-folder copy, no extra Proton settings).
+Valve's own Proton and the Steam Deck were not tested with this download.
+
+WHICH UPSCALER YOU GET
+The game is DirectX 11. OptiScaler's choices for DX11 are:
+- FSR 2.2.1 and FSR 3.1 running natively on DX11 (any GPU);
+- XeSS 2 natively on DX11 (Intel Arc only);
+- FSR 3.1 "via DX12" (fsr31_12): a background DX12 device does the
+  upscaling, which costs up to about 10% but is the only way to FSR 4
+  (RDNA 4 officially; RDNA 3 works too) and to XeSS on non-Intel cards.
+This download sets FSR 3.1 via DX12 (Dx11Upscaler=fsr31_12 in OptiScaler.ini):
+OptiScaler upgrades it to FSR 4 by itself on Radeon RX 9000 and RX 7000
+cards (Fsr4Update=auto); every other card gets FSR 3.1.
+Change it any time in the game with OptiScaler's overlay: press Insert
+(Alt+Insert on some keyboard layouts). The upscaler, FSR 4 on/off,
+sharpening and the frame counter (Page Up) are all in there. The overlay
+saves your choice in Bin\Win64\OptiScaler.ini.
+The DLSS rows in Options > Advanced Graphics pick the render size (Quality,
+Balanced, ...) as usual; OptiScaler does the upscaling.
+
+Or set it in Bin\Win64\OptiScaler.ini with a text editor:
+  [Upscalers] Dx11Upscaler=fsr31_12  = this download's setting (FSR 4 on
+    Radeon RX 7000 / 9000, FSR 3.1 elsewhere)
+  [Upscalers] Dx11Upscaler=fsr31     = FSR 3.1 native DX11, no DX12 device
+    (about 10% faster than fsr31_12 on cards without FSR 4)
+  [Upscalers] Dx11Upscaler=fsr22     = FSR 2.2, OptiScaler's own default
+  [Upscalers] Dx11Upscaler=xess      = XeSS 2 on Intel Arc
+Steam Deck: there is no Insert key. Set the upscaler in OptiScaler.ini in
+Desktop Mode, or map Insert to a back button in Steam Input.
+
+WINDOWS 10 AND FSR 4
+If the game crashes with FSR 4 on Windows 10, OptiScaler needs its
+D3D12_Optiscaler folder (Microsoft's DirectX 12 Agility SDK). It is not in
+this download (Microsoft's licence for it puts conditions on everyone who
+passes it on). Copy the D3D12_Optiscaler folder from OptiScaler's own
+release (https://github.com/optiscaler/OptiScaler/releases/tag/v0.9.4) into
+Bin\Win64 and set FsrAgilitySDKUpgrade=true in OptiScaler.ini.
+Windows 11 does not need it.
+
+CHECK THAT IT WORKS
+Bin\Win64\KCDDLSS.log says
+  NGX provider from KCDDLSS.ini NgxDll: ...\Bin\Win64\OptiScaler.dll
+and a bit later "dlss: CreateFeature ... result 0x1". OptiScaler writes its
+own log, Bin\Win64\OptiScaler.log, when LogToFile=true is set in
+OptiScaler.ini (off by default).
+
+BACK TO DLSS, OR WITHOUT OPTISCALER
+- GeForce RTX: install the standard download over this one, then set
+  NgxDll = (empty) in Bin\Win64\KCDDLSS.ini.
+- The uninstaller (KCDDLSS-Uninstall.bat / KCDDLSS-Uninstall.sh in the game
+  folder) removes the mod and the OptiScaler files it installed.
+
+NOT INCLUDED (NOT NEEDED FOR THIS GAME)
+fakenvapi and the frame-generation files of the OptiScaler release (FSR
+frame generation, XeFG, Nukem's dlssg-to-fsr3): the game has no frame
+generation for OptiScaler to replace. D3D12_Optiscaler: see WINDOWS 10 AND
+FSR 4.
+
+LICENCES AND SOURCE CODE
+- OptiScaler @OPTI_VERSION@: free software under the GNU General Public License
+  version 3 (install\OptiScaler\Licenses\OptiScaler-LICENSE.txt). The files
+  come from the official release, unmodified except one line in
+  OptiScaler.ini (Dx11Upscaler=auto changed to Dx11Upscaler=fsr31_12):
+  Optiscaler_0.9.4-final.20260718._MM.7z
+  (https://github.com/optiscaler/OptiScaler/releases/tag/v0.9.4).
+  Source code of exactly this version:
+  https://github.com/optiscaler/OptiScaler/tree/v0.9.4
+  (commit 7534ad00bf9e590eedb99e8dd9fd8c89dae3654f).
+  OptiScaler uses FreeType, under the FreeType License
+  (https://gitlab.freedesktop.org/freetype/freetype/-/blob/master/docs/FTL.TXT):
+  portions of this software are copyright (C) The FreeType Project
+  (www.freetype.org). All rights reserved.
+- amd_fidelityfx_*.dll: AMD FidelityFX SDK, AMD's licence
+  (install\OptiScaler\Licenses\FidelityFX_v1_LICENSE.md and
+  FidelityFX_v2_LICENSE.md).
+- libxess*.dll, libxell.dll: Intel XeSS SDK, Intel Simplified Software
+  License (install\OptiScaler\Licenses\XeSS_LICENSE.txt).
+- The mod itself (KCDDLSS.asi) is public domain, source code at
+  https://github.com/qahtni/kcd1-dlss
+OptiScaler, FSR and XeSS are their authors' work; this download only
+passes them on (OptiScaler.ini with the one line above), with credit to the OptiScaler team. It is not an
+official OptiScaler release. The only official OptiScaler places are its
+GitHub, its Discord and Nitec's Nexus Mods page.
+
+WHO TO ASK
+Problems with the picture inside OptiScaler (ghosting, the wrong upscaler
+chosen) belong to OptiScaler's settings and its wiki; problems with the mod
+(nothing in KCDDLSS.log, no CreateFeature line) belong to the mod's page.

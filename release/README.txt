@@ -1,6 +1,11 @@
 DLSS FOR KINGDOM COME: DELIVERANCE @VERSION@
 Kingdom Come: Deliverance (Steam, 1.9.8)
 Author: mrtaxerman
+@OPTI@
+@OPTI@THIS IS THE DOWNLOAD WITH OPTISCALER @OPTI_VERSION@ INCLUDED, for AMD and Intel
+@OPTI@cards (and NVIDIA cards that prefer FSR or XeSS): it upscales with AMD FSR
+@OPTI@2.2 / 3.1 / 4 or Intel XeSS instead of NVIDIA DLSS, and the installers set
+@OPTI@it up. On a GeForce RTX card take the standard download, it has DLSS.
 
 The game has no modern upscaler. Its only way to run cheaper is the
 "native resolution" option, which renders the scene at 720p or 900p and
@@ -16,8 +21,10 @@ The mod also contains the 30 FPS Grass Fix (grass animates at the real
 frame rate) and removes the forced sharpening in conversations.
 
 REQUIREMENTS
-- NVIDIA GeForce RTX 20 series or newer with a current driver (the shipped
-  DLSS is version @DLSS_VERSION@). Other cards: OPTISCALER.txt.
+@STD@- NVIDIA GeForce RTX 20 series or newer with a current driver (the shipped
+@STD@  DLSS is version @DLSS_VERSION@). Other cards: OPTISCALER.txt.
+@OPTI@- Any DirectX 11 graphics card. FSR 4 needs a Radeon RX 7000 / 9000;
+@OPTI@  XeSS runs best on Intel Arc. Details: OPTISCALER.txt.
 - Windows, or Steam Deck / Linux with Proton (installer included).
 - Game version 1.9.8 (Steam). On any other version the plugin finds nothing
   it knows, changes nothing and says so in KCDDLSS.log.
@@ -27,8 +34,11 @@ FILES IN THIS ARCHIVE
   renderer in memory. No game file is changed.
 - install\KCDDLSS.ini: the settings (DLSS mode, preset, sharpness, ...).
   Read at every game start. Kept on reinstall.
-- install\nvngx_dlss.dll: NVIDIA DLSS @DLSS_VERSION@ (NVIDIA RTX SDKs
-  licence, install\NVIDIA-DLSS-LICENSE.txt). Kept if one is already there.
+@STD@- install\nvngx_dlss.dll: NVIDIA DLSS @DLSS_VERSION@ (NVIDIA RTX SDKs
+@STD@  licence, install\NVIDIA-DLSS-LICENSE.txt). Kept if one is already there.
+@OPTI@- install\OptiScaler\: OptiScaler @OPTI_VERSION@ (OptiScaler.dll, OptiScaler.ini and the
+@OPTI@  AMD FSR and Intel XeSS files it uses), their licences in
+@OPTI@  install\OptiScaler\Licenses. OPTISCALER.txt says where the source code is.
 - install\version.dll: Ultimate ASI Loader 10.0.2 by ThirteenAG (MIT
   licence, install\Ultimate-ASI-Loader-LICENSE.txt). It loads .asi plugins.
 - debug\KCDDLSS.asi: the same mod with full diagnostics in KCDDLSS.log.
@@ -42,7 +52,9 @@ INSTALL (WINDOWS)
 1. Extract the archive anywhere, for example to Downloads.
 2. Double-click Install-Windows.bat in the extracted folder.
 It finds the game in your Steam libraries (else GOG / Epic default folders)
-and copies the four files to Bin\Win64.
+@STD@and copies the four files to Bin\Win64.
+@OPTI@and copies the files to Bin\Win64 (the mod, its settings, the loader and
+@OPTI@OptiScaler), then sets NgxDll = OptiScaler.dll in KCDDLSS.ini.
 If it can't find the game, drag the game folder onto Install-Windows.bat.
 Windows needs no launch options.
 If you have the standalone 30 FPS Grass Fix, the installer sets it aside
@@ -68,15 +80,21 @@ only after the game has been started once). If neither was possible, the
 installer shows the exact launch options to type in: right-click the game >
 Properties > General > Launch Options. For a game somewhere else:
   bash Install-Linux-SteamDeck.sh "/path/to/KingdomComeDeliverance"
-Proton 9 or newer. DLSS on Linux needs the NVIDIA driver; AMD and Intel
-cards use OptiScaler, see OPTISCALER.txt (on Linux that is one Proton
-switch, no files to copy).
+@STD@Proton 9 or newer. DLSS on Linux needs the NVIDIA driver; AMD and Intel
+@STD@cards use OptiScaler, see OPTISCALER.txt (on Linux that is one Proton
+@STD@switch, no files to copy).
+@OPTI@Proton 9 or newer. OptiScaler is loaded from the game folder, so no
+@OPTI@OptiScaler Proton build is needed; see OPTISCALER.txt.
 
 INSTALL BY HAND (NO SCRIPT)
 To open the game folder: in Steam, right-click Kingdom Come: Deliverance >
 Manage > Browse local files.
-1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\nvngx_dlss.dll
-   and install\version.dll into Bin\Win64 (the folder with KingdomCome.exe).
+@STD@1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\nvngx_dlss.dll
+@STD@   and install\version.dll into Bin\Win64 (the folder with KingdomCome.exe).
+@OPTI@1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\version.dll and
+@OPTI@   the files in install\OptiScaler (not its Licenses folder) into Bin\Win64
+@OPTI@   (the folder with KingdomCome.exe). In Bin\Win64\KCDDLSS.ini set the line
+@OPTI@   NgxDll = OptiScaler.dll.
    Coming from BETA 1 or 2: delete the folder Mods\KCDDLSS (and its line in
    Mods\mod_order.txt); the plugin draws the menu rows itself now.
 2. Steam Deck / Linux only: set the game's launch options to
@@ -172,9 +190,12 @@ KNOWN BEHAVIOUR
   Other versions get a one-line note in the log and no changes.
 
 FSR / XeSS THROUGH OPTISCALER (AMD, INTEL)
-Not included in this archive. OPTISCALER.txt has the download link and the
-steps for Windows (copy OptiScaler's files, one ini line) and for Linux
-(a Proton build with OptiScaler, nothing to copy).
+@STD@Not included in this archive. OPTISCALER.txt has the download link and the
+@STD@steps for Windows (copy OptiScaler's files, one ini line) and for Linux
+@STD@(a Proton build with OptiScaler, nothing to copy).
+@OPTI@Included and set up by the installers. In the game press Insert for
+@OPTI@OptiScaler's overlay (upscaler, FSR 4, sharpening). OPTISCALER.txt has
+@OPTI@the details, the licences and where the source code is.
 
 UNINSTALL
 - With the script: in the game folder, double-click KCDDLSS-Uninstall.bat
@@ -187,6 +208,7 @@ UNINSTALL
   remove an old Mods\KCDDLSS of BETA 1/2 (and its mod_order.txt line), and rename
   KCDGrassFix.asi.off back to KCDGrassFix.asi. On Linux they
   also remove the launch option and the prefix setting (backups are kept).
+@OPTI@  The OptiScaler files go too (if OptiScaler.dll is the shipped one).
 - By hand: delete those files from Bin\Win64 (keep version.dll if you use
   other .asi mods). On Linux also remove WINEDLLOVERRIDES="version=n,b"
   from the launch options.

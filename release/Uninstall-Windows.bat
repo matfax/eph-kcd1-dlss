@@ -11,10 +11,13 @@ rem   2. Renames KCDGrassFix.asi.off back to KCDGrassFix.asi (the standalone 30 
 rem   3. Deletes Bin\Win64\version.dll if it is the loader this mod installed and no other .asi
 rem      plugin is left in Bin\Win64 (another plugin would still need it).
 rem   4. Deletes KCDDLSS-Uninstall.bat from the game folder.
+@OPTI@rem   5. Deletes the OptiScaler files this download installed (OptiScaler.dll recognised by its size,
+@OPTI@rem      OptiScaler.ini, OptiScaler.log, the FSR / XeSS files, Bin\Win64\OptiScaler-Licenses).
 rem The game's own settings are untouched: the mod never wrote to user.cfg or your profile.
 title DLSS for Kingdom Come: Deliverance - uninstall
 set "UAL_SIZE=@UAL_SIZE@"
 set "DLSS_SIZE=@DLSS_SIZE@"
+@OPTI@set "OPTI_SIZE=@OPTI_SIZE@"
 set "SELF=%~dp0"
 set "SELF=%SELF:~0,-1%"
 set "ARG=%~1"
@@ -33,6 +36,13 @@ if not exist "%B%\nvngx_dlss.dll" goto :grass
 call :size "%B%\nvngx_dlss.dll" CUR
 if "%CUR%"=="%DLSS_SIZE%" (del /q "%B%\nvngx_dlss.dll" "%B%\NVIDIA-DLSS-LICENSE.txt" 2>nul & echo DLSS: Bin\Win64\nvngx_dlss.dll removed.) else (echo DLSS: Bin\Win64\nvngx_dlss.dll is not the file this mod installs. Left alone.)
 :grass
+@OPTI@if not exist "%B%\OptiScaler.dll" goto :optidone
+@OPTI@call :size "%B%\OptiScaler.dll" CUR
+@OPTI@if not "%CUR%"=="%OPTI_SIZE%" (echo OptiScaler: Bin\Win64\OptiScaler.dll is not the file this mod installs. Left alone.& goto :optidone)
+@OPTI@for %%F in (OptiScaler.dll OptiScaler.ini OptiScaler.log libxess.dll libxess_dx11.dll libxell.dll amd_fidelityfx_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_vk.dll) do del /q "%B%\%%F" 2>nul
+@OPTI@if exist "%B%\OptiScaler-Licenses" rmdir /s /q "%B%\OptiScaler-Licenses"
+@OPTI@echo OptiScaler: its files removed from Bin\Win64.
+@OPTI@:optidone
 if exist "%GAME%\Mods\KCDDLSS" rmdir /s /q "%GAME%\Mods\KCDDLSS" && echo Menu: Mods\KCDDLSS removed.
 if exist "%GAME%\Mods\mod_order.txt" (findstr /v /i /x "KCDDLSS" "%GAME%\Mods\mod_order.txt" > "%GAME%\Mods\mod_order.kcddlss-tmp" & move /y "%GAME%\Mods\mod_order.kcddlss-tmp" "%GAME%\Mods\mod_order.txt" >nul)
 if exist "%B%\KCDGrassFix.asi.off" if not exist "%B%\KCDGrassFix.asi" ren "%B%\KCDGrassFix.asi.off" "KCDGrassFix.asi" && echo Grass: standalone 30 FPS Grass Fix restored (KCDGrassFix.asi).

@@ -11,6 +11,8 @@
 #   4. If the loader was deleted: removes the line "version"="native,builtin" from the game's
 #      Proton prefix and WINEDLLOVERRIDES="version=n,b" from its Steam launch options (Steam has to
 #      be closed for that; backups kept).
+@OPTI@#   5. Deletes the OptiScaler files this download installed (OptiScaler.dll recognised by its
+@OPTI@#      checksum, OptiScaler.ini, OptiScaler.log, the FSR / XeSS files, Bin/Win64/OptiScaler-Licenses).
 set -u
 
 if [ ! -t 1 ] && [ -z "${KDL_TERM:-}" ] && { [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; }; then
@@ -20,6 +22,7 @@ fi
 
 UAL_SHA=@UAL_SHA@   # the version.dll this mod installs
 DLSS_SHA=@DLSS_SHA@   # the nvngx_dlss.dll this mod installs
+@OPTI@OPTI_SHA=@OPTI_SHA@   # the OptiScaler.dll this mod installs
 LINE='"version"="native,builtin"'
 die() { echo; echo "ERROR: $*"; echo "Nothing more was changed."; exit 1; }
 sha() { sha256sum "$1" | cut -d' ' -f1; }
@@ -99,6 +102,13 @@ if [ -e "$B/nvngx_dlss.dll" ]; then
   if [ "$(sha "$B/nvngx_dlss.dll")" = "$DLSS_SHA" ]; then rm -f "$B/nvngx_dlss.dll" "$B/NVIDIA-DLSS-LICENSE.txt" && echo "DLSS: Bin/Win64/nvngx_dlss.dll removed."
   else echo "DLSS: Bin/Win64/nvngx_dlss.dll is not the file this mod installs. Left alone."; fi
 fi
+@OPTI@if [ -e "$B/OptiScaler.dll" ]; then
+@OPTI@  if [ "$(sha "$B/OptiScaler.dll")" = "$OPTI_SHA" ]; then
+@OPTI@    rm -rf "$B/OptiScaler.dll" "$B/OptiScaler.ini" "$B/OptiScaler.log" "$B/libxess.dll" "$B/libxess_dx11.dll" "$B/libxell.dll" \
+@OPTI@           "$B/amd_fidelityfx_dx12.dll" "$B/amd_fidelityfx_upscaler_dx12.dll" "$B/amd_fidelityfx_vk.dll" "$B/OptiScaler-Licenses" &&
+@OPTI@      echo "OptiScaler: its files removed from Bin/Win64."
+@OPTI@  else echo "OptiScaler: Bin/Win64/OptiScaler.dll is not the file this mod installs. Left alone."; fi
+@OPTI@fi
 for MODS in "$GAME/Mods" "$GAME/mods"; do
   [ -d "$MODS/KCDDLSS" ] && rm -rf "$MODS/KCDDLSS" && echo "Menu: Mods/KCDDLSS removed."
   [ -f "$MODS/mod_order.txt" ] && grep -qix 'KCDDLSS' "$MODS/mod_order.txt" && { grep -vix 'KCDDLSS' "$MODS/mod_order.txt" > "$MODS/mod_order.kcddlss-tmp"; mv -f "$MODS/mod_order.kcddlss-tmp" "$MODS/mod_order.txt"; }

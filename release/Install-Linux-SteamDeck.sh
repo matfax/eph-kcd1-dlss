@@ -7,9 +7,14 @@
 # argument wins over all of that.
 # What it does (nothing else):
 #   1. Checks the game is closed.
-#   2. Copies install/KCDDLSS.asi (the mod), install/KCDDLSS.ini (settings, kept if present),
-#      install/nvngx_dlss.dll (NVIDIA DLSS, kept if present) and install/version.dll (Ultimate ASI
-#      Loader) to Bin/Win64, next to KingdomCome.exe. A version.dll already there is left alone.
+@STD@#   2. Copies install/KCDDLSS.asi (the mod), install/KCDDLSS.ini (settings, kept if present),
+@STD@#      install/nvngx_dlss.dll (NVIDIA DLSS, kept if present) and install/version.dll (Ultimate ASI
+@STD@#      Loader) to Bin/Win64, next to KingdomCome.exe. A version.dll already there is left alone.
+@OPTI@#   2. Copies install/KCDDLSS.asi (the mod), install/KCDDLSS.ini (settings, kept if present),
+@OPTI@#      install/version.dll (Ultimate ASI Loader) and OptiScaler (install/OptiScaler: OptiScaler.dll
+@OPTI@#      and its FSR / XeSS files; OptiScaler.ini kept if present) to Bin/Win64, next to
+@OPTI@#      KingdomCome.exe, and sets NgxDll = OptiScaler.dll in KCDDLSS.ini. A different version.dll or
+@OPTI@#      OptiScaler.dll already there is left alone.
 #      A standalone KCDGrassFix.asi (30 FPS Grass Fix) is renamed to .off: this mod contains it.
 #   3. Steam/Proton: adds the line "version"="native,builtin" to the game's Proton prefix
 #      (DLL overrides in user.reg, backup kept), so Proton loads version.dll from the game folder.
@@ -19,8 +24,9 @@
 #      it, or tells you what to type into the launch options yourself. Backup kept.
 #   5. Copies the uninstaller to the game folder as KCDDLSS-Uninstall.sh.
 # No game file is changed. The mod sets the game up itself at every start (no user.cfg edits).
-# NVIDIA: DLSS runs through Proton's NVAPI bridge (on by default in Proton 9+). AMD / Intel: see
-# OPTISCALER.txt (FSR / XeSS through OptiScaler, not included here).
+@STD@# NVIDIA: DLSS runs through Proton's NVAPI bridge (on by default in Proton 9+). AMD / Intel: see
+@STD@# OPTISCALER.txt (FSR / XeSS through OptiScaler, not included here).
+@OPTI@# OptiScaler is loaded from the game folder: no OptiScaler Proton build needed. See OPTISCALER.txt.
 set -u
 
 # Started by double-click (no terminal): reopen in a terminal so the messages stay readable.
@@ -31,7 +37,8 @@ fi
 
 ASI_SHA=@ASI_SHA@   # install/KCDDLSS.asi
 UAL_SHA=@UAL_SHA@   # install/version.dll
-DLSS_SHA=@DLSS_SHA@   # install/nvngx_dlss.dll
+@STD@DLSS_SHA=@DLSS_SHA@   # install/nvngx_dlss.dll
+@OPTI@OPTI_SHA=@OPTI_SHA@   # install/OptiScaler/OptiScaler.dll
 LINE='"version"="native,builtin"'
 die() { echo; echo "ERROR: $*"; echo "Nothing more was changed."; exit 1; }
 sha() { sha256sum "$1" | cut -d' ' -f1; }
@@ -114,10 +121,12 @@ fi
 echo "Game folder: $GAME"
 B=$GAME/Bin/Win64
 pgrep -f '[K]ingdomCome\.exe' >/dev/null && die "The game is running. Close it first."
-for f in KCDDLSS.asi KCDDLSS.ini nvngx_dlss.dll version.dll; do [ -f "$SELF/install/$f" ] || die "install/$f is missing from $SELF."; done
+@STD@for f in KCDDLSS.asi KCDDLSS.ini nvngx_dlss.dll version.dll; do [ -f "$SELF/install/$f" ] || die "install/$f is missing from $SELF."; done
+@OPTI@for f in KCDDLSS.asi KCDDLSS.ini version.dll OptiScaler/OptiScaler.dll OptiScaler/OptiScaler.ini; do [ -f "$SELF/install/$f" ] || die "install/$f is missing from $SELF."; done
 [ "$(sha "$SELF/install/KCDDLSS.asi")" = "$ASI_SHA" ] || die "install/KCDDLSS.asi is damaged. Download the mod again."
 [ "$(sha "$SELF/install/version.dll")" = "$UAL_SHA" ] || die "install/version.dll is damaged. Download the mod again."
-[ "$(sha "$SELF/install/nvngx_dlss.dll")" = "$DLSS_SHA" ] || die "install/nvngx_dlss.dll is damaged. Download the mod again."
+@STD@[ "$(sha "$SELF/install/nvngx_dlss.dll")" = "$DLSS_SHA" ] || die "install/nvngx_dlss.dll is damaged. Download the mod again."
+@OPTI@[ "$(sha "$SELF/install/OptiScaler/OptiScaler.dll")" = "$OPTI_SHA" ] || die "install/OptiScaler/OptiScaler.dll is damaged. Download the mod again."
 
 # 1. The files next to KingdomCome.exe
 cp -f "$SELF/install/KCDDLSS.asi" "$B/KCDDLSS.asi" || { rm -f "$B/KCDDLSS.asi"; die "Could not copy KCDDLSS.asi to $B."; }
@@ -125,9 +134,24 @@ rm -f "$B/KCDDLSS.log"
 echo "Mod: Bin/Win64/KCDDLSS.asi copied."
 if [ -e "$B/KCDDLSS.ini" ]; then echo "Settings: Bin/Win64/KCDDLSS.ini is already there. Kept (delete it to get the defaults)."
 else cp -f "$SELF/install/KCDDLSS.ini" "$B/KCDDLSS.ini" || die "Could not copy KCDDLSS.ini to $B."; echo "Settings: Bin/Win64/KCDDLSS.ini copied."; fi
-if [ -e "$B/nvngx_dlss.dll" ]; then echo "DLSS: Bin/Win64/nvngx_dlss.dll is already there. Kept."
-else cp -f "$SELF/install/nvngx_dlss.dll" "$B/nvngx_dlss.dll" || { rm -f "$B/nvngx_dlss.dll"; die "Could not copy nvngx_dlss.dll to $B (disk full?). The half-copied file was removed."; }
-     cp -f "$SELF/install/NVIDIA-DLSS-LICENSE.txt" "$B/NVIDIA-DLSS-LICENSE.txt" 2>/dev/null; echo "DLSS: Bin/Win64/nvngx_dlss.dll copied (NVIDIA DLSS @DLSS_VERSION@)."; fi
+@STD@if [ -e "$B/nvngx_dlss.dll" ]; then echo "DLSS: Bin/Win64/nvngx_dlss.dll is already there. Kept."
+@STD@else cp -f "$SELF/install/nvngx_dlss.dll" "$B/nvngx_dlss.dll" || { rm -f "$B/nvngx_dlss.dll"; die "Could not copy nvngx_dlss.dll to $B (disk full?). The half-copied file was removed."; }
+@STD@     cp -f "$SELF/install/NVIDIA-DLSS-LICENSE.txt" "$B/NVIDIA-DLSS-LICENSE.txt" 2>/dev/null; echo "DLSS: Bin/Win64/nvngx_dlss.dll copied (NVIDIA DLSS @DLSS_VERSION@)."; fi
+@OPTI@# OptiScaler: a different OptiScaler.dll already there is the user's own setup and stays.
+@OPTI@if [ -e "$B/OptiScaler.dll" ] && [ "$(sha "$B/OptiScaler.dll")" != "$OPTI_SHA" ]; then
+@OPTI@  echo "OptiScaler: Bin/Win64/OptiScaler.dll is already there and is a different file. Left alone, the mod uses it."
+@OPTI@else
+@OPTI@  for f in OptiScaler.dll libxess.dll libxess_dx11.dll libxell.dll amd_fidelityfx_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_vk.dll; do
+@OPTI@    cp -f "$SELF/install/OptiScaler/$f" "$B/$f" || { rm -f "$B/$f"; die "Could not copy $f to $B (disk full?). The half-copied file was removed."; }
+@OPTI@  done
+@OPTI@  [ -e "$B/OptiScaler.ini" ] || cp -f "$SELF/install/OptiScaler/OptiScaler.ini" "$B/OptiScaler.ini" || die "Could not copy OptiScaler.ini to $B."
+@OPTI@  mkdir -p "$B/OptiScaler-Licenses" && cp -f "$SELF/install/OptiScaler/Licenses/"* "$B/OptiScaler-Licenses/" 2>/dev/null
+@OPTI@  echo "OptiScaler: Bin/Win64/OptiScaler.dll and its FSR / XeSS files copied (OptiScaler @OPTI_VERSION@)."
+@OPTI@fi
+@OPTI@# KCDDLSS.ini: NgxDll = OptiScaler.dll (the line is replaced, or added if an old ini has none; CRLF kept)
+@OPTI@if awk '/^[ \t]*NgxDll[ \t]*=/ { cr = sub(/\r$/, ""); print "NgxDll = OptiScaler.dll" (cr ? "\r" : ""); n = 1; next } { print } END { if (!n) printf "NgxDll = OptiScaler.dll\r\n" }' "$B/KCDDLSS.ini" > "$B/KCDDLSS.ini.kcddlss-tmp" && mv -f "$B/KCDDLSS.ini.kcddlss-tmp" "$B/KCDDLSS.ini"; then
+@OPTI@  echo "Settings: KCDDLSS.ini set to NgxDll = OptiScaler.dll (the mod uses OptiScaler)."
+@OPTI@else rm -f "$B/KCDDLSS.ini.kcddlss-tmp"; echo "Settings: could not edit KCDDLSS.ini. Set the line NgxDll = OptiScaler.dll in Bin/Win64/KCDDLSS.ini yourself."; fi
 if [ -e "$B/KCDGrassFix.asi" ]; then mv -f "$B/KCDGrassFix.asi" "$B/KCDGrassFix.asi.off" && echo "Grass: standalone 30 FPS Grass Fix set aside as KCDGrassFix.asi.off (this mod contains it)."; fi
 # Options-menu rows: since 0.8.0 the plugin adds them to the page in memory. The Mods/KCDDLSS pak of BETA 1/2 must go (it would double the rows).
 for MODS in "$GAME/Mods" "$GAME/mods"; do
@@ -207,6 +231,8 @@ cp -f "$SELF/Uninstall-Linux-SteamDeck.sh" "$GAME/KCDDLSS-Uninstall.sh" &&
   echo "Uninstaller copied to the game folder: KCDDLSS-Uninstall.sh"
 echo
 echo "Done. Start the game. Bin/Win64/KCDDLSS.log then shows \"dlss: CreateFeature ... result 0x1\" once the menu is up."
-echo "If that file does not appear, the loader did not start: see README.txt. \"no usable NGX core\" in the log on an"
-echo "NVIDIA card: add PROTON_ENABLE_NVAPI=1 to the launch options. AMD / Intel: see OPTISCALER.txt."
+@STD@echo "If that file does not appear, the loader did not start: see README.txt. \"no usable NGX core\" in the log on an"
+@STD@echo "NVIDIA card: add PROTON_ENABLE_NVAPI=1 to the launch options. AMD / Intel: see OPTISCALER.txt."
+@OPTI@echo "If that file does not appear, the loader did not start: see README.txt."
+@OPTI@echo "Upscaler: OptiScaler. In the game press Insert for its overlay (FSR or XeSS). More: OPTISCALER.txt."
 echo "Settings (DLSS mode, preset, sharpness): Bin/Win64/KCDDLSS.ini, read at every start."

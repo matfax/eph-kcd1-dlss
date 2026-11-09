@@ -24,11 +24,12 @@ How it works in detail: [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
 - `install/version.dll`: [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) 10.0.2 by ThirteenAG (MIT licence, included). It loads `.asi` plugins.
 - `debug/KCDDLSS.asi`: the same mod with full diagnostics in the log, for bug reports only.
 - Installers and uninstallers for Windows and Steam Deck / Linux, plain text. `OPTISCALER.txt` for AMD and Intel cards.
+- A second download, `KCDDLSS-<version>-OptiScaler.7z`, for AMD and Intel cards: OptiScaler 0.9.4 included and set up by the same installers (FSR 3.1 via DX12 by default, FSR 4 on Radeon RX 7000 / 9000), no NVIDIA DLSS file. `release/build_release.sh` builds it with `OPTISCALER=<extracted OptiScaler release>`.
 
 ## Requirements
 
 - Kingdom Come: Deliverance, Steam version 1.9.8, 64-bit DX11. On any other version the plugin finds nothing it knows, changes nothing and says so in its log.
-- NVIDIA GeForce RTX 20 series or newer with a current driver. Other cards: OptiScaler, see `release/OPTISCALER.txt`.
+- NVIDIA GeForce RTX 20 series or newer with a current driver. Other cards: the OptiScaler download, see `release/OPTISCALER-included.txt`.
 - Steam Deck / Linux: Proton 9 or newer. DLSS needs the NVIDIA driver; AMD and Intel use OptiScaler, which on Linux is one Proton switch (a GE-Proton or Proton-CachyOS build with OptiScaler), nothing to copy.
 
 ## Install
@@ -94,7 +95,7 @@ release/build_release.sh BETA-3 /path/to/dinput8.dll /path/to/UAL-LICENSE /path/
 
 - By mrtaxerman.
 - NVIDIA DLSS (NVIDIA RTX SDKs licence) and [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) by ThirteenAG (MIT), see [THIRD_PARTY.md](THIRD_PARTY.md).
-- [OptiScaler](https://github.com/optiscaler/OptiScaler) brings FSR and XeSS to the same hook; not included.
+- [OptiScaler](https://github.com/optiscaler/OptiScaler) brings FSR and XeSS to the same hook; included (unmodified, GPL-3.0, source link in `OPTISCALER-included.txt`) only in the OptiScaler download.
 - Crysis 3 Remastered's DLSS integration on the same engine was the blueprint. The code here was written from scratch.
 
 ## License
