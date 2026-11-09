@@ -16,7 +16,8 @@ WHAT THE INSTALLER DOES FOR OPTISCALER
     OptiScaler.dll, OptiScaler.ini (kept if you already have one),
     libxess.dll, libxess_dx11.dll, libxell.dll,
     amd_fidelityfx_dx12.dll, amd_fidelityfx_upscaler_dx12.dll,
-    amd_fidelityfx_vk.dll
+    amd_fidelityfx_vk.dll,
+    the D3D12_Optiscaler folder (D3D12Core.dll)
   and the licences as Bin\Win64\OptiScaler-Licenses.
 - Sets the line NgxDll = OptiScaler.dll in Bin\Win64\KCDDLSS.ini: the mod
   loads OptiScaler by that name. Do NOT rename OptiScaler.dll to dxgi.dll,
@@ -60,13 +61,11 @@ Steam Deck: there is no Insert key. Set the upscaler in OptiScaler.ini in
 Desktop Mode, or map Insert to a back button in Steam Input.
 
 WINDOWS 10 AND FSR 4
-If the game crashes with FSR 4 on Windows 10, OptiScaler needs its
-D3D12_Optiscaler folder (Microsoft's DirectX 12 Agility SDK). It is not in
-this download (Microsoft's licence for it puts conditions on everyone who
-passes it on). Copy the D3D12_Optiscaler folder from OptiScaler's own
-release (https://github.com/optiscaler/OptiScaler/releases/tag/v0.9.4) into
-Bin\Win64 and set FsrAgilitySDKUpgrade=true in OptiScaler.ini.
-Windows 11 does not need it.
+If the game crashes with FSR 4 on Windows 10, set FsrAgilitySDKUpgrade=true
+in Bin\Win64\OptiScaler.ini. OptiScaler then uses the D3D12_Optiscaler
+folder (Microsoft's DirectX 12 Agility SDK) that the installer put in
+Bin\Win64. Windows 11 does not need it; it stays unused unless that line
+is set.
 
 CHECK THAT IT WORKS
 Bin\Win64\KCDDLSS.log says
@@ -84,8 +83,7 @@ BACK TO DLSS, OR WITHOUT OPTISCALER
 NOT INCLUDED (NOT NEEDED FOR THIS GAME)
 fakenvapi and the frame-generation files of the OptiScaler release (FSR
 frame generation, XeFG, Nukem's dlssg-to-fsr3): the game has no frame
-generation for OptiScaler to replace. D3D12_Optiscaler: see WINDOWS 10 AND
-FSR 4.
+generation for OptiScaler to replace.
 
 LICENCES AND SOURCE CODE
 - OptiScaler @OPTI_VERSION@: free software under the GNU General Public License
@@ -106,6 +104,8 @@ LICENCES AND SOURCE CODE
   FidelityFX_v2_LICENSE.md).
 - libxess*.dll, libxell.dll: Intel XeSS SDK, Intel Simplified Software
   License (install\OptiScaler\Licenses\XeSS_LICENSE.txt).
+- D3D12_Optiscaler\D3D12Core.dll: Microsoft DirectX 12 Agility SDK,
+  Microsoft's licence (install\OptiScaler\Licenses\DirectX_LICENSE.txt).
 - The mod itself (KCDDLSS.asi) is public domain, source code at
   https://github.com/qahtni/kcd1-dlss
 OptiScaler, FSR and XeSS are their authors' work; this download only

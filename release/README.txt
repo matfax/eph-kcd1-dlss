@@ -92,7 +92,7 @@ Manage > Browse local files.
 @STD@1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\nvngx_dlss.dll
 @STD@   and install\version.dll into Bin\Win64 (the folder with KingdomCome.exe).
 @OPTI@1. Copy install\KCDDLSS.asi, install\KCDDLSS.ini, install\version.dll and
-@OPTI@   the files in install\OptiScaler (not its Licenses folder) into Bin\Win64
+@OPTI@   the contents of install\OptiScaler (not its Licenses folder) into Bin\Win64
 @OPTI@   (the folder with KingdomCome.exe). In Bin\Win64\KCDDLSS.ini set the line
 @OPTI@   NgxDll = OptiScaler.dll.
    Coming from BETA 1 or 2: delete the folder Mods\KCDDLSS (and its line in

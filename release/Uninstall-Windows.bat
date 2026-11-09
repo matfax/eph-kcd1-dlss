@@ -12,7 +12,7 @@ rem   3. Deletes Bin\Win64\version.dll if it is the loader this mod installed an
 rem      plugin is left in Bin\Win64 (another plugin would still need it).
 rem   4. Deletes KCDDLSS-Uninstall.bat from the game folder.
 @OPTI@rem   5. Deletes the OptiScaler files this download installed (OptiScaler.dll recognised by its size,
-@OPTI@rem      OptiScaler.ini, OptiScaler.log, the FSR / XeSS files, Bin\Win64\OptiScaler-Licenses).
+@OPTI@rem      OptiScaler.ini, OptiScaler.log, the FSR / XeSS files, D3D12_Optiscaler, OptiScaler-Licenses).
 rem The game's own settings are untouched: the mod never wrote to user.cfg or your profile.
 title DLSS for Kingdom Come: Deliverance - uninstall
 set "UAL_SIZE=@UAL_SIZE@"
@@ -41,6 +41,7 @@ if "%CUR%"=="%DLSS_SIZE%" (del /q "%B%\nvngx_dlss.dll" "%B%\NVIDIA-DLSS-LICENSE.
 @OPTI@if not "%CUR%"=="%OPTI_SIZE%" (echo OptiScaler: Bin\Win64\OptiScaler.dll is not the file this mod installs. Left alone.& goto :optidone)
 @OPTI@for %%F in (OptiScaler.dll OptiScaler.ini OptiScaler.log libxess.dll libxess_dx11.dll libxell.dll amd_fidelityfx_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_vk.dll) do del /q "%B%\%%F" 2>nul
 @OPTI@if exist "%B%\OptiScaler-Licenses" rmdir /s /q "%B%\OptiScaler-Licenses"
+@OPTI@if exist "%B%\D3D12_Optiscaler" rmdir /s /q "%B%\D3D12_Optiscaler"
 @OPTI@echo OptiScaler: its files removed from Bin\Win64.
 @OPTI@:optidone
 if exist "%GAME%\Mods\KCDDLSS" rmdir /s /q "%GAME%\Mods\KCDDLSS" && echo Menu: Mods\KCDDLSS removed.

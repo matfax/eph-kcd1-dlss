@@ -144,6 +144,8 @@ else cp -f "$SELF/install/KCDDLSS.ini" "$B/KCDDLSS.ini" || die "Could not copy K
 @OPTI@  for f in OptiScaler.dll libxess.dll libxess_dx11.dll libxell.dll amd_fidelityfx_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_vk.dll; do
 @OPTI@    cp -f "$SELF/install/OptiScaler/$f" "$B/$f" || { rm -f "$B/$f"; die "Could not copy $f to $B (disk full?). The half-copied file was removed."; }
 @OPTI@  done
+@OPTI@  mkdir -p "$B/D3D12_Optiscaler" && cp -f "$SELF/install/OptiScaler/D3D12_Optiscaler/D3D12Core.dll" "$B/D3D12_Optiscaler/D3D12Core.dll" ||
+@OPTI@    { rm -f "$B/D3D12_Optiscaler/D3D12Core.dll"; die "Could not copy D3D12_Optiscaler/D3D12Core.dll to $B (disk full?). The half-copied file was removed."; }
 @OPTI@  [ -e "$B/OptiScaler.ini" ] || cp -f "$SELF/install/OptiScaler/OptiScaler.ini" "$B/OptiScaler.ini" || die "Could not copy OptiScaler.ini to $B."
 @OPTI@  mkdir -p "$B/OptiScaler-Licenses" && cp -f "$SELF/install/OptiScaler/Licenses/"* "$B/OptiScaler-Licenses/" 2>/dev/null
 @OPTI@  echo "OptiScaler: Bin/Win64/OptiScaler.dll and its FSR / XeSS files copied (OptiScaler @OPTI_VERSION@)."

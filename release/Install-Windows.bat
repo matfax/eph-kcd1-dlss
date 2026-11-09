@@ -66,6 +66,8 @@ if exist "%B%\KCDDLSS.ini" (
 @OPTI@if exist "%B%\OptiScaler.dll" call :size "%B%\OptiScaler.dll" CUR
 @OPTI@if defined CUR if not "%CUR%"=="%OPTI_SIZE%" goto :optiforeign
 @OPTI@for %%F in (OptiScaler.dll libxess.dll libxess_dx11.dll libxell.dll amd_fidelityfx_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_vk.dll) do copy /y /b "%SELF%\install\OptiScaler\%%F" "%B%\%%F" >nul || goto :copyfail
+@OPTI@if not exist "%B%\D3D12_Optiscaler" mkdir "%B%\D3D12_Optiscaler"
+@OPTI@copy /y /b "%SELF%\install\OptiScaler\D3D12_Optiscaler\D3D12Core.dll" "%B%\D3D12_Optiscaler\D3D12Core.dll" >nul || goto :copyfail
 @OPTI@if not exist "%B%\OptiScaler.ini" copy /y "%SELF%\install\OptiScaler\OptiScaler.ini" "%B%\OptiScaler.ini" >nul
 @OPTI@if not exist "%B%\OptiScaler-Licenses" mkdir "%B%\OptiScaler-Licenses"
 @OPTI@copy /y "%SELF%\install\OptiScaler\Licenses\*.*" "%B%\OptiScaler-Licenses" >nul 2>nul

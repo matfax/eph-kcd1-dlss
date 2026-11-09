@@ -10,7 +10,7 @@
 # .bat/.ini/README get CRLF; .sh stay LF and executable.
 # OptiScaler download: OPTISCALER=<folder of the extracted Optiscaler_0.9.4-final.20260718._MM.7z> (env) builds
 #   dist/KCDDLSS-<version>-OptiScaler.7z instead (top folder KCDDLSS-OptiScaler): no nvngx_dlss.dll; install/OptiScaler/ =
-#   OptiScaler.dll, OptiScaler.ini (Dx11Upscaler=fsr31_12, the only change), the FSR / XeSS DLLs, Licenses (the release's
+#   OptiScaler.dll, OptiScaler.ini (Dx11Upscaler=fsr31_12, the only change), the FSR / XeSS DLLs, D3D12_Optiscaler/D3D12Core.dll, Licenses (the release's
 #   AMD / Intel texts + OptiScaler's GPL-3.0 text, OPTISCALER_LICENSE env, default downloads/optiscaler-license/LICENSE).
 #   Template lines starting @OPTI@ are used instead of lines starting @STD@; OPTISCALER-included.txt ships as OPTISCALER.txt.
 set -euo pipefail
@@ -53,13 +53,14 @@ if [ -z "$OPTI" ]; then sed 's/\r$//; s/$/\r/' "$DLIC" > "$S/install/NVIDIA-DLSS
 else
   O=$S/install/OptiScaler; mkdir -p "$O/Licenses"
   for f in $OPTI_FILES; do cp -p "$OPTI/$f" "$O/$f"; done
+  mkdir -p "$O/D3D12_Optiscaler"; cp -p "$OPTI/D3D12_Optiscaler/D3D12Core.dll" "$O/D3D12_Optiscaler/D3D12Core.dll"   # user 11-09: ship it (Agility SDK, FSR 4 on Windows 10)
   python3 -I - "$OPTI/OptiScaler.ini" "$O/OptiScaler.ini" <<'PY'
 import sys
 s = open(sys.argv[1], 'rb').read()
 old = b'\nDx11Upscaler=auto'; assert s.count(old) == 1, 'Dx11Upscaler=auto not found once'
 open(sys.argv[2], 'wb').write(s.replace(old, b'\nDx11Upscaler=fsr31_12', 1))   # FSR 3.1 via DX12: upgrades to FSR 4 on RDNA 3/4
 PY
-  for f in FidelityFX_v1_LICENSE.md FidelityFX_v2_LICENSE.md XeSS_LICENSE.txt; do cp -p "$OPTI/Licenses/$f" "$O/Licenses/$f"; done
+  for f in FidelityFX_v1_LICENSE.md FidelityFX_v2_LICENSE.md XeSS_LICENSE.txt DirectX_LICENSE.txt; do cp -p "$OPTI/Licenses/$f" "$O/Licenses/$f"; done
   sed 's/\r$//; s/$/\r/' "$OPTI_LIC" > "$O/Licenses/OptiScaler-LICENSE.txt"
 fi
 # 0.8.0: no Mods/KCDDLSS pak any more; the plugin adds the menu rows in memory (tools/asi/menu_rows.h from tools/menu-mod/MM_AdvancedGraphics.xml)
