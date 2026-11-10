@@ -27,8 +27,9 @@ REQUIREMENTS
 @OPTI@  XeSS runs best on Intel Arc. Details: OPTISCALER.txt.
 - Windows, or Steam Deck / Linux with Proton (installer included).
 - Game version 1.9.8 (Steam) or 1.9.8b (Epic Games Store). On any other
-  version the plugin finds nothing it knows, changes nothing and says so in
-  KCDDLSS.log.
+  version the plugin says so in KCDDLSS.log and applies only the grass fix
+  and the sharpening removal (they find their code by pattern); DLSS and
+  the menu rows are skipped.
 
 FILES IN THIS ARCHIVE
 - install\KCDDLSS.asi: the mod, a plugin. When the game starts it hooks the
@@ -189,7 +190,8 @@ KNOWN BEHAVIOUR
   resolution list and the quality presets work as before.
 - The mod talks to one game: KingdomCome.exe, Steam 1.9.8 or Epic 1.9.8b,
   64-bit DX11.
-  Other versions get a one-line note in the log and no changes.
+  Other versions get a one-line note in the log; only the grass fix and
+  the sharpening removal are applied there.
 
 FSR / XeSS THROUGH OPTISCALER (AMD, INTEL)
 @STD@Not included in this archive. OPTISCALER.txt has the download link and the

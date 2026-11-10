@@ -610,15 +610,24 @@ static FARPROC WINAPI my_GetProcAddress(HMODULE h, LPCSTR name)
  * convention: -x, +y) goes to DLSS as Jitter.Offset.
  * Requirements (user.cfg): r_Width/r_Height = render size, r_NativeWidth/r_NativeHeight = output size (or
  * fullscreen native res), r_AntialiasingMode 0. Anything unexpected: log once, leave the game's stretch result. */
-/* --- per-build WHGame.dll offsets (Epic 1.9.8b port) ---
- * Every fixed WHGame.dll address the plugin uses, one row per game build. The row is picked once in hook_whgame() by
- * reading (never writing) three things that only match the right build: the renderer vtable slot +0xab8 must hold that
- * build's stretch function, and CSystem slots 111/112 that build's LoadXmlFromBuffer/LoadXmlFromFile. With no match the
- * Steam row stays selected and every patch site reports "bytes differ" exactly as before, so an unknown build is still
- * left alone. The Epic row was derived from the Epic WHGame.dll (PE timestamp 0x69ccdca1, SizeOfImage 0x39e5000)
- * by matching each Steam site's code, RTTI vtables and cvar registrations; all globals but the gEnv block sit at the
- * same -0x5480 data shift as the renderer object, and the renderer struct layout is unchanged (renderer->depth SRV
- * distance 0x29130 in both builds). */
+/* --- per-build WHGame.dll offsets ---
+ * Every fixed WHGame.dll address the plugin uses, one row per game build; the RVA_* names below read from the selected
+ * row. select_build() picks the row once in hook_whgame() by reading (never writing) two identity checks: the renderer
+ * vtable slot +0xab8 holds that build's stretch function, and CSystem slots 111/112 hold its LoadXmlFromBuffer /
+ * LoadXmlFromFile (the same comparisons dlss_install and menu_xml_install make before hooking). Either check is enough,
+ * so a vtable already hooked by another mod does not hide the build; a 1/2 match is logged as partial. Every patch
+ * still checks its own bytes or slot before writing. With no matching row the build is unknown: only the
+ * pattern-searched grass fix and sharpening removal run, dlss_install / menu_xml_install are skipped and g_wh_base
+ * stays NULL, which turns off everything that reads WHGame.dll globals.
+ * Epic 1.9.8b row: from the Epic WHGame.dll (PE timestamp 0x69ccdca1, SizeOfImage 0x39e5000), each value matched to
+ * its use in code (patch-site bytes, RTTI vtables, gEnv stores, cvar registrations, call sites), not computed by a
+ * shift. The data shifts against Steam differ by group: renderer, depth SRV, camera matrices, bind records -0x5480;
+ * $VelocityObjects -0x5410; eye index -0x54a4; AA copy -0x5484; r_PostProcessGameFx/r_CustomVisions -0x54ec;
+ * gEnv -0x5040. Do not derive a new row from one shift.
+ * Not per build (shared by all rows, so a new build must re-check them too): the struct offsets R_*, R_DEVINFO,
+ * R_FULLSCREEN, PFX_MGR_OFF, CT_* and the vtable slot numbers (renderer, console, CryPak, post effects). They are
+ * unchanged in Epic 1.9.8b (the renderer's depth SRV member sits 0x29130 from the object in both builds). Addresses
+ * quoted in comments elsewhere in this file are Steam 1.9.8 ones. */
 typedef struct {
     const char *name;
     DWORD renderer, vt_upscale, fn_upscale, depth_srv, velocity_tex, stereo_eye, jitter_zero, aa_mode, plog, console, post_view, post_proj, bindrec, gamefx, customvis, velfmt_l, velfmt_r, csys_vt, fn_loadxml_file, fn_loadxml_buf, pcrypak, fn_onactivate;
@@ -626,14 +635,24 @@ typedef struct {
     BYTE zero_ctx[16];   /* dlss_install: jne rel32 + mov al,1 + the 8-byte jitter zeroing */
 } WH_BUILD;
 static const WH_BUILD g_wh_builds[] = {
-    { "Steam 1.9.8",
-      0x34c6980u, 0x23e9b68u, 0x29b51cu, 0x34efab0u, 0x378f6d8u, 0x2ff12b4u, 0x3e243fu, 0x358fcc4u, 0x29d1798u, 0x29d1768u, 0x34b95b8u, 0x34b95f8u, 0x33ff908u, 0x3786b84u, 0x3786b88u, 0x2020671u, 0x20206bcu, 0x268a6a8u, 0xea3d98u, 0xea3d70u, 0x29d1710u, 0x666a24u,
-      { 0x44,0x8b,0x05,0xa4,0x52,0x4b,0x01, 0x48,0x8d,0x05,0x6d,0xf0,0x76,0x01, 0x8b,0x15,0x93,0x52,0x4b,0x01, 0x41,0xb1,0x0b },
-      { 0x0f,0x85,0x8c,0xcb,0x86,0x00,0xb0,0x01, 0x49,0x83,0xa7,0x20,0x0f,0x00,0x00,0x00 } },
-    { "Epic 1.9.8b",
-      0x34c1500u, 0x23e17a8u, 0x29b74cu, 0x34ea630u, 0x378a2c8u, 0x2febe10u, 0x3e262fu, 0x358a840u, 0x29cc758u, 0x29cc728u, 0x34b4138u, 0x34b4178u, 0x33fa488u, 0x3781698u, 0x378169cu, 0x201cd35u, 0x201cd80u, 0x26818d8u, 0xea06bcu, 0xea0694u, 0x29cc6d0u, 0x666c14u,
-      { 0x44,0x8b,0x05,0x60,0x37,0x4b,0x01, 0x48,0x8d,0x05,0x99,0xd5,0x76,0x01, 0x8b,0x15,0x4f,0x37,0x4b,0x01, 0x41,0xb1,0x0b },
-      { 0x0f,0x85,0xf8,0x92,0x86,0x00,0xb0,0x01, 0x49,0x83,0xa7,0x20,0x0f,0x00,0x00,0x00 } },
+    { .name = "Steam 1.9.8",
+      .renderer = 0x34c6980u, .vt_upscale = 0x23e9b68u, .fn_upscale = 0x29b51cu, .depth_srv = 0x34efab0u,
+      .velocity_tex = 0x378f6d8u, .stereo_eye = 0x2ff12b4u, .jitter_zero = 0x3e243fu, .aa_mode = 0x358fcc4u,
+      .plog = 0x29d1798u, .console = 0x29d1768u, .post_view = 0x34b95b8u, .post_proj = 0x34b95f8u,
+      .bindrec = 0x33ff908u, .gamefx = 0x3786b84u, .customvis = 0x3786b88u, .velfmt_l = 0x2020671u,
+      .velfmt_r = 0x20206bcu, .csys_vt = 0x268a6a8u, .fn_loadxml_file = 0xea3d98u, .fn_loadxml_buf = 0xea3d70u,
+      .pcrypak = 0x29d1710u, .fn_onactivate = 0x666a24u,
+      .ctx_l = { 0x44,0x8b,0x05,0xa4,0x52,0x4b,0x01, 0x48,0x8d,0x05,0x6d,0xf0,0x76,0x01, 0x8b,0x15,0x93,0x52,0x4b,0x01, 0x41,0xb1,0x0b },
+      .zero_ctx = { 0x0f,0x85,0x8c,0xcb,0x86,0x00,0xb0,0x01, 0x49,0x83,0xa7,0x20,0x0f,0x00,0x00,0x00 } },
+    { .name = "Epic 1.9.8b",
+      .renderer = 0x34c1500u, .vt_upscale = 0x23e17a8u, .fn_upscale = 0x29b74cu, .depth_srv = 0x34ea630u,
+      .velocity_tex = 0x378a2c8u, .stereo_eye = 0x2febe10u, .jitter_zero = 0x3e262fu, .aa_mode = 0x358a840u,
+      .plog = 0x29cc758u, .console = 0x29cc728u, .post_view = 0x34b4138u, .post_proj = 0x34b4178u,
+      .bindrec = 0x33fa488u, .gamefx = 0x3781698u, .customvis = 0x378169cu, .velfmt_l = 0x201cd35u,
+      .velfmt_r = 0x201cd80u, .csys_vt = 0x26818d8u, .fn_loadxml_file = 0xea06bcu, .fn_loadxml_buf = 0xea0694u,
+      .pcrypak = 0x29cc6d0u, .fn_onactivate = 0x666c14u,
+      .ctx_l = { 0x44,0x8b,0x05,0x60,0x37,0x4b,0x01, 0x48,0x8d,0x05,0x99,0xd5,0x76,0x01, 0x8b,0x15,0x4f,0x37,0x4b,0x01, 0x41,0xb1,0x0b },
+      .zero_ctx = { 0x0f,0x85,0xf8,0x92,0x86,0x00,0xb0,0x01, 0x49,0x83,0xa7,0x20,0x0f,0x00,0x00,0x00 } },
 };
 static const WH_BUILD *g_wh_build = &g_wh_builds[0];
 #define RVA_RENDERER    (g_wh_build->renderer)   /* CD3D9Renderer instance (static object) */
@@ -2463,7 +2482,7 @@ static int kick_activate(const char *why)
     return 1;
 }
 
-static void select_build(BYTE *base)
+static int select_build(BYTE *base)   /* 1 = a row matched (selected), 0 = unknown build */
 {
     unsigned int i;
     for (i = 0; i < sizeof g_wh_builds / sizeof g_wh_builds[0]; i++) {
@@ -2473,28 +2492,32 @@ static void select_build(BYTE *base)
         if (readable((BYTE *)cs, 113 * 8) && cs[111] == base + b->fn_loadxml_buf && cs[112] == base + b->fn_loadxml_file) score++;
         if (score) {
             g_wh_build = b;
-            LOG(log_s("WHGame.dll build: "); log_s(b->name); log_s(" ("); log_i(score); log_s("/2 identity checks)"));
-            return;
+            LOG(log_s("WHGame.dll build: "); log_s(b->name); log_s(" ("); log_i(score);
+                log_s(score == 2 ? "/2 identity checks)" : "/2 identity checks: partial match, the other vtable is probably hooked by another mod)"));
+            return 1;
         }
     }
-    LOGC(log_s("WHGame.dll build: unknown (neither Steam 1.9.8 nor Epic 1.9.8b), Steam offsets kept: the version-specific parts will report differences"));
+    LOGC(log_s("WHGame.dll build: unknown (neither Steam 1.9.8 nor Epic 1.9.8b): DLSS, velocity, jitter and menu patches skipped"));
+    return 0;
 }
 
 static void hook_whgame(BYTE *base)
 {
     IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER *)base; IMAGE_NT_HEADERS64 *nt; IMAGE_DATA_DIRECTORY *dir; IMAGE_IMPORT_DESCRIPTOR *imp;
-    FARPROC real_gpa; int done = 0;
+    FARPROC real_gpa; int done = 0, known;
     if (!base || base == g_hooked_base) return;
     LOG(log_s("WHGame.dll at "); log_x((ULONG_PTR)base));
     if (dos->e_magic != IMAGE_DOS_SIGNATURE) { LOGC(log_s("not a PE image: nothing changed")); return; }
     nt = (IMAGE_NT_HEADERS64 *)(base + dos->e_lfanew);
     if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) { LOGC(log_s("not a 64-bit PE image: nothing changed")); return; }
     if (nt->OptionalHeader.SizeOfImage < 0x3800000) { LOGC(log_s("WHGame.dll image too small for this build's offsets: nothing changed")); return; }
-    select_build(base);
-    grass_patch(base);
+    known = select_build(base);
+    grass_patch(base);      /* pattern-searched: safe on any build */
     sharpen_patch(base);
-    dlss_install(base);
-    menu_xml_install(base);
+    if (known) {            /* fixed addresses of the selected row */
+        dlss_install(base);
+        menu_xml_install(base);
+    }
     dir = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
     if (!dir->VirtualAddress) { LOGC(log_s("no import table: DLSS hook not installed")); return; }
     real_gpa = GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "GetProcAddress");
