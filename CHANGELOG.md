@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Epic Games Store version 1.9.8b supported. Its `WHGame.dll` is a different build from Steam 1.9.8, so every fixed address the plugin used had moved: the log said "creation-site bytes differ", "jitter generator bytes differ" and "LoadXmlFromFile slot is ..." and no DLSS ran. The addresses are now one table with a row per build, and the plugin picks the row at start by checking which build's functions sit in the renderer and `CSystem` vtables (read only; an unknown build still gets no changes). The log names the build: `WHGame.dll build: Epic 1.9.8b (2/2 identity checks)`. Steam behaviour is unchanged. The Epic row was checked statically against the Epic DLL, not yet in game; see HOW-IT-WORKS.md, "Game builds".
+
 ## BETA 3 (2026-11-09)
 
 Plugin build 0.8.0.

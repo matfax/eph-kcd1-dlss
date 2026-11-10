@@ -1,6 +1,6 @@
 # How it works
 
-Game: Kingdom Come: Deliverance 1.9.8 (Steam, build 22623230), CryEngine, 64-bit DirectX 11. The plugin is `tools/asi/kcd_dlss.c`, one C file with no C runtime, loaded by Ultimate ASI Loader (`version.dll`) when `KingdomCome.exe` starts.
+Game: Kingdom Come: Deliverance 1.9.8 (Steam, build 22623230; also Epic Games Store 1.9.8b, see [Game builds](#game-builds)), CryEngine, 64-bit DirectX 11. The plugin is `tools/asi/kcd_dlss.c`, one C file with no C runtime, loaded by Ultimate ASI Loader (`version.dll`) when `KingdomCome.exe` starts.
 
 ## Where DLSS goes
 
@@ -32,6 +32,16 @@ At start, and again whenever the settings menu reapplies the profile, the plugin
 ## The menu rows
 
 The plugin registers two console variables, `r_DLSSMode` and `r_DLSSPreset`. Since BETA 3 the plugin hooks `ISystem::LoadXmlFromFile` (CSystem vtable slot 112), reads the game's `MM_AdvancedGraphics.xml` through `gEnv->pCryPak`, inserts the two rows as text and parses the result with `LoadXmlFromBuffer` (slot 111); before that a small mod in `Mods/KCDDLSS` replaced the Advanced Graphics page definition (`Libs/UI/UIActions/MM_AdvancedGraphics.xml`, a flowgraph) with one that adds two rows built from the same node types the page already uses (`AddChoicesButton`, `AddChoiceOption`, `SetChoice`, `GetChoice`, and a `Debug:ConsoleVariable` node per row). The page reads the cvar when it opens and writes it when a choice changes, and the plugin polls its cvars every frame, applies the mode or model live and saves the choice to `KCDDLSS.ini`. On a PC without an upscaler both cvars are pinned to the "Unsupported" choice. `tools/menu-mod/MM_AdvancedGraphics.patch` holds exactly the lines added; `build_menu_mod.py` validates the patched flowgraph against every shipped UIAction file before it packs it.
+
+## Game builds
+
+Everything the plugin touches in `WHGame.dll` is at a fixed address of one game build: 22 `RVA_*` values (the renderer object, its vtable slot `+0xab8`, the jitter zeroing, the two `$VelocityObjects` creation sites, the `CSystem` vtable, `gEnv->pConsole` / `pLog` / `pCryPak`, the depth SRV, the camera matrices and a few cvars), plus two byte patterns that contain relative jumps and RIP displacements (`ctx_l` at the velocity site, `zero_ctx` at the jitter site). The grass fix and the sharpening removal search for their code and need none of them.
+
+These values live in one table, `g_wh_builds[]` in `kcd_dlss.c`, one row per build; the `RVA_*` names read from the selected row. At start `select_build()` picks the row by reading, never writing, two things only the right build has: the renderer vtable slot `+0xab8` holding that row's stretch function, and `CSystem` slots 111 / 112 holding its `LoadXmlFromBuffer` / `LoadXmlFromFile`. These are the same comparisons the hooks make before they install. With no matching row the Steam row stays selected, so every version-specific patch reports its "bytes differ" line and changes nothing, as before.
+
+The Epic 1.9.8b row (`WHGame.dll` PE timestamp `0x69ccdca1`) was found in that DLL without running the game: the patch sites by their byte checks with the displacements masked (one match each), `$VelocityObjects` and the renderer from the velocity site's own RIP operands, the vtables through RTTI, `gEnv` from where `new CLog` / `new CXConsole` / `new CCryPak` are stored, the camera matrices from the `GetModelViewMatrix` / `GetProjectionMatrix` calls that fill them, the depth SRV from its bind at t16, the eye index from the `$VelocityObjects[eye]` reads, and the AA copy and the post-effect cvars from their registrations. The renderer struct is unchanged (its depth SRV member is `0x29130` from the object in both builds), and the globals around it sit at one data shift of `-0x5480`.
+
+A new build gets a new row the same way.
 
 ## Also in the plugin
 
