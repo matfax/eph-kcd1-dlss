@@ -2482,7 +2482,7 @@ static int kick_activate(const char *why)
     return 1;
 }
 
-static int select_build(BYTE *base)   /* 1 = a row matched (selected), 0 = unknown build */
+static int select_build(BYTE *base)
 {
     unsigned int i;
     for (i = 0; i < sizeof g_wh_builds / sizeof g_wh_builds[0]; i++) {
@@ -2512,9 +2512,9 @@ static void hook_whgame(BYTE *base)
     if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) { LOGC(log_s("not a 64-bit PE image: nothing changed")); return; }
     if (nt->OptionalHeader.SizeOfImage < 0x3800000) { LOGC(log_s("WHGame.dll image too small for this build's offsets: nothing changed")); return; }
     known = select_build(base);
-    grass_patch(base);      /* pattern-searched: safe on any build */
+    grass_patch(base);
     sharpen_patch(base);
-    if (known) {            /* fixed addresses of the selected row */
+    if (known) {
         dlss_install(base);
         menu_xml_install(base);
     }
